@@ -9,7 +9,7 @@
 - 벤치프레스 어깨 통증
 - 숄더 프레스 어깨 통증
 - 데드리프트 허리 통증
-- 스쿼트 무릎 통증
+- 스쿼트·런지·레그프레스 무릎 통증
 - 스쿼트 허리 통증
 - 레터럴 레이즈·업라이트 로우 어깨 통증
 
@@ -37,7 +37,7 @@
 | `docs/bench-press-plan.md` | 벤치프레스 기획서와 근거 논문 목록 |
 | `docs/shoulder-press-plan.md` | 숄더 프레스 기획서와 근거 논문 목록 |
 | `docs/deadlift-plan.md` | 데드리프트 기획서와 근거 논문 목록 |
-| `docs/squat-knee-plan.md` | 스쿼트 무릎 기획서와 근거 논문 목록 |
+| `docs/squat-knee-plan.md` | 스쿼트·런지·레그프레스 무릎 기획서와 근거 논문 목록 |
 | `docs/squat-back-plan.md` | 스쿼트 허리 기획서와 근거 논문 목록 |
 | `docs/evidence-principles.md` | 근거 표시 원칙 |
 | `docs/expert-review-pending.md` | 전문가 검토가 필요한 자체 설계 목록 |
