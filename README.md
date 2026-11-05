@@ -11,6 +11,7 @@
 - 데드리프트 허리 통증
 - 스쿼트 무릎 통증
 - 스쿼트 허리 통증
+- 레터럴 레이즈·업라이트 로우 어깨 통증
 
 ## 이 앱이 다른 점: 근거를 네 가지로 나눠 보여줍니다
 
@@ -40,6 +41,7 @@
 | `docs/squat-back-plan.md` | 스쿼트 허리 기획서와 근거 논문 목록 |
 | `docs/evidence-principles.md` | 근거 표시 원칙 |
 | `docs/expert-review-pending.md` | 전문가 검토가 필요한 자체 설계 목록 |
+| `docs/lateral-raise-plan.md` | 레터럴 레이즈·업라이트 로우 기획서 |
 
 ## 앞으로
 
