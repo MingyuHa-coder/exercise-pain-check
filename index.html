@@ -144,12 +144,10 @@ a { color: var(--plate); }
 .tag.synth { color: var(--plate); }
 .tag.app { color: var(--good); }
 .tag.hypo { color: var(--warn); border-style: dashed; background: var(--warn-tint); }
-.basis { display: flex; gap: 10px; align-items: flex-start; }
-.basis .tag { flex: none; margin-top: 2px; min-width: 84px; text-align: center; }
-.basis p { margin: 0; min-width: 0; }
-.kinds { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.kinds li { display: flex; gap: 10px; align-items: center; font-size: 14px; }
-.kinds .tag { min-width: 96px; text-align: center; }
+.basis, .kinds li { display: grid; grid-template-columns: 104px minmax(0, 1fr); column-gap: 12px; align-items: start; }
+.basis .tag, .kinds .tag { width: 100%; box-sizing: border-box; text-align: center; margin-top: 3px; }
+.basis p, .kinds li > span:not(.tag) { margin: 0; font-size: 15px; line-height: 1.6; }
+.kinds { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .log { display: flex; flex-direction: column; gap: 6px; }
 .log .seg { grid-template-columns: repeat(3, 1fr); }
 .log .seg button { font-size: 14px; }
@@ -264,8 +262,7 @@ const TOPICS = {
             ev: "mid", evText: "체중의 1.5배 넘는 벤치, 주 1회 초과, 5년 이상이 겹치면 위험이 크게 높아졌어요 (MRI 환자-대조 연구).", src: "Nevalainen 2016, Noteboom 2024" },
       scap: { name: "날개뼈 움직임 문제", plain: "팔을 움직일 때 날개뼈가 제대로 따라오지 않는 패턴이에요.",
             say: "날개뼈 세팅과 보조운동이 도움이 될 수 있어요.",
-            ev: "mid", evText: "통증 없는 사람에게도 70% 넘게 보여서, 이것만으로 원인이라고 보진 않아요.", src: "Kibler 2013, Hickey 2018",
-            hypo: "\"날개뼈를 모으고 내리는지\" 스스로 답한 내용으로 이 패턴을 고르는 건 앱의 방식이에요." },
+            ev: "mid", evText: "통증 없는 사람에게도 70% 넘게 보여서, 이것만으로 원인이라고 보진 않아요.", src: "Kibler 2013, Hickey 2018" },
     },
     adjustments: {
       load: { title: "무게와 횟수 낮추기", how: "통증 없이 할 수 있는 무게로 2주 동안 해 보세요. 쇄골 끝이 아프면 벤치 횟수도 주 1회로 줄여 보세요.",
@@ -368,19 +365,16 @@ const TOPICS = {
     ],
     patterns: {
       rc: { ...COMMON_P.rc("팔을 머리 위로 드는 동작에서 가장 흔하고, 중간 높이에서만 아픈 \"통증 호\"가 대표적인 단서예요."),
-            evText: "운동치료가 1차 치료라는 근거는 강해요. 통증 호는 진료실 검사에서 있으면 가능성을 약 2배 높이는 단서지만, 그것만으로 확진하진 못해요.", src: "Pieters 2020, Michener 2009, Hegedus 2012",
-            hypo: "통증 호 연구는 진료실에서 검사자가 한 것이에요. 혼자 해 본 결과도 같은 의미인지는 확인되지 않았어요." },
+            evText: "운동치료가 1차 치료라는 근거는 강해요. 통증 호는 진료실 검사에서 있으면 가능성을 약 2배 높이는 단서지만, 그것만으로 확진하진 못해요.", src: "Pieters 2020, Michener 2009, Hegedus 2012", },
       acj: { name: "쇄골 끝 관절 통증", plain: "어깨 위쪽, 쇄골 끝이 아픈 패턴이에요. 팔을 끝까지 올렸을 때 아픈 게 특징이에요.",
             say: "무게를 줄이고, 계속되면 전문가에게 확인받으세요.",
             ev: "weak", evText: "증상 특징은 영국 1차 진료 지침 요약에 나와요. 숄더 프레스와의 관계를 직접 본 연구는 없어요.", src: "KISS 요약" },
       btn: { name: "목 뒤로 내리는 프레스 부담", plain: "바를 목 뒤로 내리면 어깨를 바깥으로 많이 돌려야 하고, 바가 머리를 피하도록 고개를 앞으로 숙이게 돼요.",
             say: "앞으로 내리는 방식으로 바꿔 보세요.",
-            ev: "mid", evText: "숙련자 33명 분석에서 남성은 어깨 회전이 자기 가동범위를 넘었고 목이 더 굽었어요. 팔을 벌리고 바깥으로 돌린 자세에서 아픈 헬스인 사례들도 보고됐어요.", src: "McKean 2015, Kolber 2010, Bonilla 2022",
-            hypo: "목과 어깨 사이 통증을 이 패턴의 단서로 쓰는 건 앱의 추론이에요." },
+            ev: "mid", evText: "숙련자 33명 분석에서 남성은 어깨 회전이 자기 가동범위를 넘었고 목이 더 굽었어요. 팔을 벌리고 바깥으로 돌린 자세에서 아픈 헬스인 사례들도 보고됐어요.", src: "McKean 2015, Kolber 2010, Bonilla 2022" },
       trunk: { name: "몸통·날개뼈 고정 문제", plain: "허리가 젖혀지거나 어깨가 솟으면서, 팔을 끝까지 올리는 부담이 어깨로 몰리는 패턴이에요.",
             say: "자세와 보조운동이 도움이 될 수 있어요.",
-            ev: "mid", evText: "등을 편 자세에서 어깨를 더 높이 올릴 수 있었어요. 다만 한 번 측정한 연구들이에요.", src: "Barrett 2016, McKean 2015, Kibler 2013",
-            hypo: "벽 팔 올리기와 \"어깨가 귀 쪽으로 솟는지\" 질문으로 이 패턴을 고르는 건 앱의 방식이에요. 검증된 검사가 아니에요." },
+            ev: "mid", evText: "등을 편 자세에서 어깨를 더 높이 올릴 수 있었어요. 다만 한 번 측정한 연구들이에요.", src: "Barrett 2016, McKean 2015, Kibler 2013" },
     },
     adjustments: {
       front: { title: "앞으로 내리는 프레스로 바꾸기", how: "바를 목 뒤가 아니라 턱 앞, 윗가슴 쪽으로 내리세요.",
@@ -496,8 +490,7 @@ const TOPICS = {
                hypo: "\"무릎 아래까지\"를 기준으로 진료를 먼저 권하는 건 앱의 보수적인 선택이에요." },
       load: { name: "훈련 부하 급증", plain: "최근 무게나 횟수를 갑자기 늘렸거나 자주 하면서, 허리가 회복할 시간이 부족했을 수 있는 패턴이에요.",
               say: "부하부터 조절해 보세요.",
-              ev: "weak", evText: "파워리프터 104명 중 허리·골반 부상의 52%가 데드리프트 훈련 중 시작됐고, 본인이 꼽은 원인은 과도한 훈련량·강도가 23%로 가장 많았어요. 설문 연구라 원인이라고 단정할 순 없어요.", src: "Strömbäck 2018",
-              hypo: "최근 4주 사이의 증가와 주 3회 이상으로 이 패턴을 고르는 기준은 앱이 만든 것이에요." },
+              ev: "weak", evText: "파워리프터 104명 중 허리·골반 부상의 52%가 데드리프트 훈련 중 시작됐고, 본인이 꼽은 원인은 과도한 훈련량·강도가 23%로 가장 많았어요. 설문 연구라 원인이라고 단정할 순 없어요.", src: "Strömbäck 2018" },
     },
     adjustments: {
       load: { title: "무게와 횟수 낮추기", how: "통증이 늘지 않는 무게로, 데드리프트는 주 1~2번으로 줄여 2주 동안 해 보세요.",
@@ -516,7 +509,10 @@ const TOPICS = {
       ["Michaelson 2016, 데드리프트 훈련 vs 저부하 운동 RCT", "https://medicaljournals.se/jrm/content/html/10.2340/16501977-2091"],
       ["Strömbäck 2018, 파워리프팅 부상 단면 연구", "https://pmc.ncbi.nlm.nih.gov/articles/PMC5954586/"],
       ["Saraceni 2020, 들기 중 허리 굽힘과 허리 통증", "https://doi.org/10.2519/jospt.2020.9218"],
-      ["Martín-Fuentes 2020, 데드리프트 변형별 근활성도", "https://pmc.ncbi.nlm.nih.gov/articles/PMC7046193/"]],
+      ["Martín-Fuentes 2020, 데드리프트 변형별 근활성도", "https://pmc.ncbi.nlm.nih.gov/articles/PMC7046193/"],
+      ["Tampier 2007, 반복 굽힘과 디스크 탈출 (돼지 척추 실험)", "https://www.backfitpro.com/medical-scientific-articles/2007/[104]Tampier,C.(2007)Progressive-disc-herniation[Spine].pdf"],
+      ["HSE, 영국 산업안전청 들기 지침", "https://hse.gov.uk/msd/manual-handling/good-handling-technique.htm"],
+      ["Coenen 2014, 작업 중 들기와 허리 통증 메타분석", "https://research.vu.nl/ws/files/42834184/Coenen_OEM_2014b.pdf"]],
     sample: { where: "center", leg: "none", onset: "gradual", when: "lift", style: "conv", freq: "three", spike: "yes", now: "rest", dur: "lt2", trend: "same" },
     summary(a) { return [
       `아픈 곳: ${label("where", a.where)} / 다리 증상: ${label("leg", a.leg)}`,
@@ -544,8 +540,8 @@ const TOPICS = {
     },
     extras() {
       return [
-        card("허리를 굽히면 다치나요?", "mid",
-          "\"허리를 절대 굽히지 말라\"는 말은 근거가 약해요. 들어올릴 때 허리를 더 굽히는 사람이 허리 통증이 더 생기거나 오래간다는 근거는 없었어요(근거 품질은 낮음). 다만 연구에서 든 무게는 펜부터 12kg 상자까지라, 무거운 데드리프트에 그대로 적용할 수는 없어요.", "Saraceni 2020"),
+        card("허리를 굽히면 다치나요?", "weak",
+          "양쪽 근거가 다 있어요. 실험실에서 돼지 척추 디스크에 압박을 주며 굽혔다 펴기를 수천 번 반복하자 디스크가 조금씩 밀려나 16개 중 8개가 완전히 탈출했어요. 영국 산업안전청도 들 때 허리를 크게 굽히지 말고, 드는 도중 더 굽히지 말라고 권해요. 반면 사람을 직접 측정한 연구들에서는 허리를 더 굽혀 드는 사람에게 허리 통증이 더 생긴다는 근거가 없었어요(근거 품질 낮음, 12kg 이하로 든 연구). 무거운 데드리프트에서 어느 쪽이 맞는지는 아직 확실하지 않아요. 분명한 건 드는 무게와 횟수가 많을수록 허리 통증 위험이 늘었다는 점이에요.", "Tampier 2007, HSE 들기 지침, Saraceni 2020, Coenen 2014"),
         card("허리 보호대를 차면 나을까요?", "mid",
           "허리 통증 치료 목적의 벨트나 코르셋은 영국 가이드라인이 권하지 않아요. 운동할 때 차는 리프팅 벨트가 통증에 어떤 영향을 주는지는 이번에 본 자료에 없어요.", "NICE NG59")];
     },
@@ -837,7 +833,7 @@ function viewResult() {
         <li>${tag("app")}<span>연구를 바탕으로 앱이 권하는 실용적인 방법</span></li>
         <li>${tag("hypo")}<span>앱이 세운 것으로, 아직 연구로 확인되지 않은 부분</span></li>
       </ul>
-      ${basis("hypo", "답변으로 패턴과 조정을 고르는 점수 규칙은 앱이 만든 것이에요. 전문가 검토 전이에요.")}
+      <p class="src">답변으로 패턴과 조정을 고르는 규칙도 앱이 만든 것이라, 전체가 아직 전문가 검토 전이에요.</p>
     </div>
     ${refer}
     ${pats}
