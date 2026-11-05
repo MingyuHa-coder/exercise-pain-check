@@ -1,0 +1,875 @@
+<title>운동 어깨 점검</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column like a phone screen; a 5-segment progress bar styled after colour-coded bumper plates sits on top. */
+:root {
+  --chalk: #F2F3F0;      /* page: gym chalk */
+  --card: #FFFFFF;
+  --ink: #15191E;
+  --muted: #59626B;
+  --line: #D7DBD5;
+  --plate: #1D55C4;      /* 20 kg plate blue: the accent */
+  --plate-ink: #FFFFFF;
+  --plate-tint: #E5ECFA;
+  --danger: #C2302A;     /* 25 kg red: red flags */
+  --danger-tint: #FBE8E6;
+  --warn: #9A6A00;       /* 15 kg yellow: weak evidence */
+  --warn-tint: #FBF1D6;
+  --good: #2A7743;       /* 10 kg green: strong evidence */
+  --good-tint: #E3F2E7;
+  --font-display: "Black Han Sans", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --chalk: #111417; --card: #191D22; --ink: #E9EBE7; --muted: #9AA3AB; --line: #2B3138;
+    --plate: #6E9BFF; --plate-ink: #0A1124; --plate-tint: #1A2645;
+    --danger: #FF7B70; --danger-tint: #3A1B19; --warn: #F0C04C; --warn-tint: #3A3018;
+    --good: #6CCB8A; --good-tint: #18301F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --chalk: #111417; --card: #191D22; --ink: #E9EBE7; --muted: #9AA3AB; --line: #2B3138;
+  --plate: #6E9BFF; --plate-ink: #0A1124; --plate-tint: #1A2645;
+  --danger: #FF7B70; --danger-tint: #3A1B19; --warn: #F0C04C; --warn-tint: #3A3018;
+  --good: #6CCB8A; --good-tint: #18301F; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--chalk); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.app { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* top bar */
+.top { display: flex; flex-direction: column; gap: 10px; }
+.brand { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.brand b { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.01em; }
+.brand span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.stage { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stage i { display: block; height: 6px; border-radius: 3px; background: var(--line); }
+.stage.done i { background: var(--ink); }
+.stage.now i { background: var(--plate); }
+.stage small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage.now small { color: var(--ink); font-weight: 600; }
+
+/* type */
+h1, h2 { margin: 0; text-wrap: balance; line-height: 1.3; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 7vw, 36px); }
+h2 { font-family: var(--font-body); font-weight: 600; font-size: 22px; letter-spacing: -0.01em; }
+h3 { font-size: 17px; margin: 0; font-weight: 700; }
+p { margin: 0; }
+.lead { color: var(--muted); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack-lg { display: flex; flex-direction: column; gap: 20px; }
+
+/* surfaces */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.note { font-size: 14px; color: var(--muted); border-left: 3px solid var(--line); padding: 2px 0 2px 12px; }
+.alert { border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; background: var(--danger-tint); border: 1px solid var(--danger); }
+.alert h2 { color: var(--danger); }
+.notice { border-radius: 14px; padding: 16px 18px; background: var(--plate-tint); display: flex; flex-direction: column; gap: 6px; }
+
+/* steps on start screen */
+.flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.flow li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.flow li:first-child { border-top: 0; }
+.flow em { font-style: normal; font-family: var(--font-mono); font-size: 13px; color: var(--plate); padding-top: 2px; }
+.flow span { font-size: 15px; }
+
+/* controls */
+button { font: inherit; color: inherit; }
+.btn { appearance: none; border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; font-size: 16px; cursor: pointer; background: var(--plate); color: var(--plate-ink); min-height: 52px; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.small { min-height: 40px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+.btn:focus-visible, .opt:focus-visible, .seg button:focus-visible, a:focus-visible, .check input:focus-visible { outline: 3px solid var(--plate); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row .btn { flex: 1 1 140px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--plate); text-decoration: underline; cursor: pointer; font-size: 14px; }
+a { color: var(--plate); }
+
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--plate); flex: none; }
+
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { appearance: none; text-align: left; width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; gap: 12px; align-items: center; min-height: 54px; font-size: 16px; }
+.opt .mark { width: 20px; height: 20px; flex: none; border: 2px solid var(--line); border-radius: 50%; display: grid; place-items: center; }
+.opt.multi .mark { border-radius: 5px; }
+.opt[aria-pressed="true"] { border-color: var(--plate); background: var(--plate-tint); }
+.opt.pic { flex-direction: column; align-items: stretch; padding: 8px; gap: 8px; }
+.opt.pic img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.opt.pic .pic-label { display: flex; gap: 12px; align-items: center; padding: 2px 8px 4px; }
+.opt[aria-pressed="true"] .mark { border-color: var(--plate); background: var(--plate); }
+.opt[aria-pressed="true"] .mark::after { content: ""; width: 8px; height: 8px; background: var(--plate-ink); border-radius: 2px; }
+
+/* red-flag rows */
+.flag { display: flex; flex-direction: column; gap: 10px; padding: 14px 0; border-top: 1px solid var(--line); }
+.flag:first-child { border-top: 0; padding-top: 0; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.seg button { appearance: none; border: 1.5px solid var(--line); background: var(--card); border-radius: 10px; min-height: 44px; cursor: pointer; font-weight: 600; }
+.seg button[aria-pressed="true"].yes { border-color: var(--danger); background: var(--danger-tint); color: var(--danger); }
+.seg button[aria-pressed="true"].no { border-color: var(--ink); background: var(--ink); color: var(--chalk); }
+
+/* barbell figure */
+.bar-fig { width: 100%; height: auto; display: block; }
+.bar-fig text { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+
+/* evidence chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.strong { color: var(--good); background: var(--good-tint); }
+.chip.mid { color: var(--plate); background: var(--plate-tint); }
+.chip.weak { color: var(--warn); background: var(--warn-tint); }
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.src { font-size: 13px; color: var(--muted); }
+
+.adj { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.adj:first-of-type { border-top: 0; padding-top: 0; }
+.adj .how { font-size: 15px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; padding: 2px 7px; border-radius: 5px; border: 1px solid currentColor; white-space: nowrap; line-height: 1.5; }
+.tag.fact { color: var(--ink); }
+.tag.synth { color: var(--plate); }
+.tag.app { color: var(--good); }
+.tag.hypo { color: var(--warn); border-style: dashed; background: var(--warn-tint); }
+.basis { display: flex; gap: 10px; align-items: flex-start; }
+.basis .tag { flex: none; margin-top: 2px; min-width: 84px; text-align: center; }
+.basis p { margin: 0; min-width: 0; }
+.kinds { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.kinds li { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.kinds .tag { min-width: 96px; text-align: center; }
+.log { display: flex; flex-direction: column; gap: 6px; }
+.log .seg { grid-template-columns: repeat(3, 1fr); }
+.log .seg button { font-size: 14px; }
+.log .seg button[aria-pressed="true"][data-v="less"] { border-color: var(--good); background: var(--good-tint); color: var(--good); }
+.log .seg button[aria-pressed="true"][data-v="same"] { border-color: var(--ink); background: var(--ink); color: var(--chalk); }
+.log .seg button[aria-pressed="true"][data-v="more"] { border-color: var(--danger); background: var(--danger-tint); color: var(--danger); }
+.logmsg { font-size: 14px; color: var(--muted); }
+
+.qcount { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; border-top: 0; }
+tr.hit td { background: var(--plate-tint); }
+tr.hit td:first-child { box-shadow: inset 3px 0 0 var(--plate); }
+
+.summary { font-family: var(--font-body); font-size: 14px; white-space: pre-wrap; background: var(--chalk); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0; }
+.sources { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+footer { font-size: 12px; color: var(--muted); text-align: center; padding-top: 8px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .screen { animation: rise 0.25s ease-out; }
+  @keyframes rise { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><b id="brandName">운동 어깨 점검</b><span id="brandTag">SHOULDER CHECK</span></div>
+    <div class="stages" id="stages" aria-label="진행 단계"></div>
+  </header>
+  <main id="main" aria-live="polite"></main>
+  <footer>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 통증이 계속되거나 심해지면 의사나 물리치료사의 진료를 받으세요.</footer>
+</div>
+
+<script>
+/* =========================================================
+   CONTENT — 문구와 질문은 여기만 고치면 됩니다.
+   ========================================================= */
+const STAGES = ["위험 신호", "증상 질문", "패턴", "조정", "전문가"];
+
+const BASE_FLAGS = [
+  { id: "cardiac", q: "가슴이 답답하거나 숨이 차고, 식은땀과 함께 어깨나 팔이 아픈가요?", level: 0 },
+  { id: "disloc", q: "어깨가 빠진 느낌이 들거나 모양이 변했나요?", level: 1 },
+  { id: "infect", q: "열이 나거나, 어깨가 붉고 뜨겁게 부었나요?", level: 1 },
+  { id: "night", q: "쉬어도 밤새 계속 아프거나, 혹이 만져지거나, 이유 없이 살이 빠졌나요?", level: 3 },
+  { id: "neck", q: "팔이나 손이 저리거나, 통증이 팔꿈치 아래까지 내려가나요?", level: 3 },
+];
+const BASE_LEVELS = [
+  { title: "지금 119에 전화하세요", body: "어깨가 아니라 심장이나 폐 문제일 수 있어요. 운동을 멈추고 바로 도움을 요청하세요.", call: true },
+  { title: "오늘 응급실로 가세요", body: "탈구나 관절 감염은 당일 치료가 필요해요. 운동 조언으로 해결할 수 있는 상황이 아니에요." },
+  null,
+  { title: "빠른 시일 내 진료를 받으세요", body: "어깨 근육·힘줄 문제가 아닐 수 있어요. 목에서 오는 통증이나 다른 원인을 먼저 확인해야 해요." },
+];
+const withFlag = (extra) => [BASE_FLAGS[0], BASE_FLAGS[1], BASE_FLAGS[2], extra, BASE_FLAGS[3], BASE_FLAGS[4]];
+const withLevel = (lv2) => BASE_LEVELS.map((l, i) => i === 2 ? lv2 : l);
+
+const COMMON_Q = {
+  dur: { id: "dur", q: "아픈 지 얼마나 됐나요?", opts: [["lt2", "2주 미만"], ["w2to6", "2~6주"], ["gt6", "6주 이상"]] },
+  trend: { id: "trend", q: "요즘 통증은 어떻게 변하고 있나요?", opts: [["better", "좋아지는 중"], ["same", "그대로"], ["worse", "나빠지는 중"]] },
+  acc: { id: "acc", q: "밴드 외회전이나 날개뼈 운동 같은 보조운동을 하나요?", opts: [["regular", "정기적으로 함"], ["sometimes", "가끔"], ["never", "안 함"]] },
+};
+const COMMON_P = {
+  rc: (where) => ({ name: "회전근개 관련 통증", plain: `어깨 속 힘줄이 눌리거나 과부하를 받는 패턴이에요. ${where}`,
+        say: "운동으로 좋아지는 경우가 많아요. 아래 조정부터 해 보세요.",
+        ev: "mid", evText: "진단명 자체는 모호하지만, 운동치료가 1차 치료라는 근거는 강해요.", src: "Pieters 2020, Kibler 2013" }),
+};
+const COMMON_A = {
+  acc: { title: "회전근개·날개뼈 운동 추가", how: "밴드 외회전, 엎드려 Y자로 팔 들기처럼 아래쪽 등과 날개뼈 근육을 쓰는 운동을 가볍게 시작하세요. 어깨를 귀 쪽으로 으쓱하지 않도록 하세요.",
+         fact: "운동치료는 어깨 충돌성 통증의 1차 치료로 권고돼요. 날개뼈 중심 운동이 단기에 일반 운동보다 나았어요.", hypo: "여기 적은 두 운동은 앱이 고른 예시예요. 어떤 운동을 몇 번 하는 게 가장 좋은지는 정해져 있지 않아요.", ev: "strong", src: "Pieters 2020, Kibler 2013" },
+};
+const SRC = {
+  bess: ["BESS/BOA 어깨 통증 진료 경로 (Rees 2021)", "https://pmc.ncbi.nlm.nih.gov/articles/PMC7905504"],
+  pieters: ["Pieters 2020, 어깨 충돌성 통증 보존치료 종합 고찰", "https://repository.uantwerpen.be/docman/irua/187b87/163966_2020_05_18.pdf"],
+  kibler: ["Kibler 2013, 견갑 운동이상 국제 합의문", "https://bjsm.bmj.com/content/47/14/877"],
+  hickey: ["Hickey 2018, 견갑 운동이상과 어깨 통증 위험", "https://bjsm.bmj.com/content/52/2/102"],
+  barrett: ["Barrett 2016, 등 자세와 어깨 통증·가동범위", "https://www.pubmed.gov/27475532/"],
+};
+
+const TOPICS = {
+  /* ---------------- 벤치프레스 ---------------- */
+  bench: {
+    name: "벤치프레스", brand: "벤치 어깨 점검", eyebrow: "BENCH · SHOULDER",
+    hero: "벤치할 때 어깨가 아프다면",
+    redFlags: withFlag({ id: "tear", q: "무거운 무게를 내리다 \"뚝\" 하는 느낌과 함께 아프고 힘이 빠졌나요? 가슴이나 겨드랑이 모양이 그대로여도 해당돼요.", level: 2 }),
+    flagLevels: withLevel({ title: "며칠 안에 정형외과 진료를 받으세요", body: "대흉근이나 회전근개가 찢어졌을 수 있어요. 대흉근 부분 파열은 겉모양이 정상처럼 보이기도 해요. 일찍 볼수록 치료 선택지가 많아요." }),
+    flagSrc: "BESS/BOA 어깨 통증 진료 경로 (Rees 2021), ElMaraghy 2012",
+    questions: [
+      { id: "where", q: "어디가 아픈가요?", opts: [
+        ["front", "어깨 앞쪽"], ["top", "어깨 위쪽 한 점 (쇄골 끝)"], ["sideback", "어깨 옆이나 뒤"], ["unsure", "잘 모르겠음"] ] },
+      { id: "when", q: "언제 가장 아픈가요?", opts: [
+        ["lower", "바를 가슴까지 내릴 때"], ["press", "바를 밀어 올릴 때"], ["after", "운동 후나 다음 날"], ["daily", "운동 안 할 때, 일상생활에서도"] ] },
+      { id: "grip", q: "벤치 그립 너비는 어느 정도인가요?", hint: "내 손 간격과 가장 비슷한 사진을 골라 주세요.", imgs: { g1: "img/grip-1.jpg", g15: "img/grip-15.jpg", g2: "img/grip-2.jpg" }, opts: [
+        ["g1", "어깨너비 정도"], ["g15", "어깨너비의 1.5배쯤"], ["g2", "그보다 넓게"] ] },
+      { id: "elbow", q: "바를 내릴 때 팔꿈치는 어떻게 되나요?", hint: "누운 모습을 위에서 내려다본 그림이에요. 몸통과 위팔 사이 각도를 비교해 보세요.", figure: "elbow", opts: [
+        ["tucked", "몸통에 바짝 붙임 (약 45°)"], ["mid", "중간 정도 (약 70°)"], ["flared", "옆으로 거의 일자 (약 90°)"] ] },
+      { id: "scap", q: "날개뼈를 모으고 아래로 내린 채로 벤치를 하나요?", opts: [
+        ["yes", "예"], ["no", "아니오"], ["unsure", "잘 모르겠음"] ] },
+      { id: "other", q: "벤치 말고 아픈 운동이 있나요?", hint: "해당하는 것을 모두 골라 주세요.", multi: true, opts: [
+        ["lateral", "사이드 레터럴 레이즈"], ["upright", "업라이트 로우"], ["ohp", "숄더 프레스"], ["dips", "딥스"], ["none", "없음"] ] },
+      { id: "daily", q: "일상에서 불편한 동작이 있나요?", hint: "해당하는 것을 모두 골라 주세요.", multi: true, opts: [
+        ["cross", "팔을 반대편으로 가로질러 뻗기 (안전벨트 매기)"], ["behind", "등 뒤로 손 올리기"], ["overhead", "머리 위로 팔 들기"], ["none", "없음"] ] },
+      { id: "load", q: "벤치 최고 무게(1RM)는 내 체중의 몇 배쯤인가요?", opts: [
+        ["lt1", "1배 미만"], ["mid", "1~1.5배"], ["gt15", "1.5배 넘음"], ["unknown", "잘 모름"] ] },
+      COMMON_Q.dur, COMMON_Q.trend, COMMON_Q.acc,
+    ],
+    patterns: {
+      rc: COMMON_P.rc("헬스하는 사람의 어깨 통증에서 가장 흔해요."),
+      acj: { name: "쇄골 끝 관절 통증", plain: "어깨 위쪽, 쇄골 끝이 반복해서 눌리는 패턴이에요. 무겁게, 자주, 오래 벤치를 한 사람에게 많아요.",
+            say: "무게와 빈도를 먼저 줄이고 그립을 조정해 보세요.",
+            ev: "mid", evText: "체중의 1.5배 넘는 벤치, 주 1회 초과, 5년 이상이 겹치면 위험이 크게 높아졌어요 (MRI 환자-대조 연구).", src: "Nevalainen 2016, Noteboom 2024" },
+      scap: { name: "날개뼈 움직임 문제", plain: "팔을 움직일 때 날개뼈가 제대로 따라오지 않는 패턴이에요.",
+            say: "날개뼈 세팅과 보조운동이 도움이 될 수 있어요.",
+            ev: "mid", evText: "통증 없는 사람에게도 70% 넘게 보여서, 이것만으로 원인이라고 보진 않아요.", src: "Kibler 2013, Hickey 2018",
+            hypo: "\"날개뼈를 모으고 내리는지\" 스스로 답한 내용으로 이 패턴을 고르는 건 앱의 방식이에요." },
+    },
+    adjustments: {
+      load: { title: "무게와 횟수 낮추기", how: "통증 없이 할 수 있는 무게로 2주 동안 해 보세요. 쇄골 끝이 아프면 벤치 횟수도 주 1회로 줄여 보세요.",
+              fact: "무게를 낮추는 건 어깨 통증 보존적 관리의 기본 원칙이에요. 체중 1.5배 넘는 벤치, 주 1회 초과, 5년 이상이 겹치면 쇄골 끝 골용해 위험이 높았어요.", hypo: "\"2주\"라는 기간과 \"주 1회\"로 줄이라는 횟수는 앱이 정한 값이에요.", ev: "mid", src: "BESS/BOA 2021, Nevalainen 2016" },
+      grip: { title: "그립을 어깨너비 1~1.5배로", how: "손 간격을 어깨너비의 1.5배보다 좁게 잡으세요. 너무 좁게(어깨너비 정도)도 잡지 마세요.",
+              fact: "근골격 모델에서 2배 그립은 쇄골 끝 압박과 회전근개 부담을 키웠고, 아주 좁은 그립은 관절 위쪽에 힘이 더 걸렸어요.", hypo: "그립을 바꾸면 실제로 통증이 줄어드는지는 사람 대상으로 확인되지 않았어요.", ev: "mid", src: "Noteboom 2024" },
+      scap: { title: "날개뼈 모으고 내리기", how: "바를 잡기 전에 날개뼈를 뒤로 모으고 아래로 내려 벤치에 고정한 채로 하세요.",
+              fact: "근골격 모델에서 날개뼈를 모으면 어깨 관절 압박이 줄고 회전근개가 덜 일했어요.", hypo: "실제로 통증이 줄어드는지는 사람 대상으로 확인되지 않았어요.", ev: "mid", src: "Noteboom 2024" },
+      elbow: { title: "팔꿈치 각도를 중간으로", how: "팔꿈치를 옆으로 일자(90°)로 벌리지도, 몸통에 바짝(45°) 붙이지도 말고 그 사이(약 70°)로 내리세요.",
+              fact: "근골격 모델에서 팔꿈치 각도의 영향은 그립·날개뼈보다 작았고, 45°는 관절 위쪽에 걸리는 힘을 키웠어요.", hypo: "약 70°를 권하는 건 모델 결과를 바탕으로 한 앱의 제안이에요. 통증이 줄어드는지는 확인되지 않았어요.", ev: "weak", src: "Noteboom 2024" },
+      acc: COMMON_A.acc,
+      flex: { title: "어깨 뒤쪽 스트레칭", how: "팔을 반대편으로 가로질러 당기는 스트레칭, 옆으로 누워 팔을 안쪽으로 돌리는 스트레칭을 해 보세요.",
+              fact: "전문가 합의문은 어깨 뒤쪽이 뻣뻣하면 날개뼈가 앞으로 끌려갈 수 있고, 재활은 유연성 확보부터 시작한다고 봐요.", hypo: "팔을 가로지르는 동작이 불편한 사람에게 이 스트레칭을 연결한 건 앱의 판단이에요.", ev: "weak", src: "Kibler 2013, MedBridge" },
+    },
+    sources: [SRC.bess, SRC.pieters, SRC.kibler,
+      ["Nevalainen 2016, 벤치 강도와 쇄골 끝 골용해", "https://link.springer.com/doi/10.1007/s00256-016-2446-z"],
+      ["Noteboom 2024, 벤치 기술에 따른 어깨 부하", "https://repository.tudelft.nl/file/File_e93e7ee3-27f5-4ced-8650-3db606326d44"],
+      ["ElMaraghy 2012, 대흉근 파열 체계적 고찰", "https://doi.org/10.1016/j.jse.2011.04.035"],
+      SRC.hickey, SRC.barrett,
+      ["Torwichien 2020, 움직임 손상 분류의 일치도", "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7136527/"]],
+    sample: { where: "front", when: "lower", grip: "g2", elbow: "flared", scap: "unsure", other: ["lateral"], daily: ["cross"], load: "mid", dur: "w2to6", trend: "same", acc: "never" },
+    summary(a) { return [
+      `아픈 곳: ${label("where", a.where)}`,
+      `아플 때: ${label("when", a.when)}`,
+      `기간·경과: ${label("dur", a.dur)}, ${label("trend", a.trend)}`,
+      `그립: ${label("grip", a.grip)} / 팔꿈치: ${label("elbow", a.elbow)} / 날개뼈 세팅: ${label("scap", a.scap)}`,
+      `벤치 1RM: 체중의 ${label("load", a.load)}`,
+      `다른 아픈 운동: ${(a.other || []).map(v => label("other", v)).join(", ") || "-"}`,
+      `불편한 일상 동작: ${(a.daily || []).map(v => label("daily", v)).join(", ") || "-"}`]; },
+    analyse(a) {
+      const sc = { rc: 0, acj: 0, scap: 0, ag: 0 };
+      if (has(a, "where", "front") || has(a, "where", "sideback")) sc.rc += 2;
+      ["lateral", "upright", "ohp"].forEach(v => { if (has(a, "other", v)) sc.rc += 1; });
+      if (has(a, "daily", "overhead")) sc.rc += 2;
+      if (has(a, "when", "lower") || has(a, "when", "press")) sc.rc += 1;
+      if (has(a, "where", "top")) sc.acj += 4;
+      if (has(a, "daily", "cross")) sc.acj += 1;
+      if (has(a, "grip", "g2")) sc.acj += 2; else if (has(a, "grip", "g15")) sc.acj += 1;
+      if (has(a, "load", "gt15")) sc.acj += 2;
+      if (has(a, "scap", "no") || has(a, "scap", "unsure")) sc.scap += 2;
+      if (has(a, "acc", "never")) sc.scap += 1;
+      if (has(a, "where", "front")) sc.ag += 1;
+      if (has(a, "when", "lower")) sc.ag += 1;
+      if (has(a, "daily", "cross")) sc.ag += 1;
+      if (has(a, "daily", "behind")) sc.ag += 1;
+
+      const main = sc.acj > sc.rc ? "acj" : "rc";
+      const other = main === "rc" ? "acj" : "rc";
+      const patterns = [main];
+      if (sc[other] >= 3) patterns.push(other);
+      if (sc.scap >= 2) patterns.push("scap");
+
+      const picks = [];
+      picks.push(["load", main === "acj" || has(a, "load", "gt15") ? 1 : 6]);
+      if (has(a, "grip", "g15") || has(a, "grip", "g2")) picks.push(["grip", 2]);
+      if (has(a, "scap", "no") || has(a, "scap", "unsure")) picks.push(["scap", 3]);
+      if (has(a, "elbow", "flared") || has(a, "elbow", "tucked")) picks.push(["elbow", 5]);
+      if (has(a, "acc", "never") || has(a, "acc", "sometimes")) picks.push(["acc", 4]);
+      if (has(a, "daily", "cross") || has(a, "daily", "behind")) picks.push(["flex", 7]);
+      return finish(a, sc, patterns, picks, has(a, "when", "daily"));
+    },
+    extras(r) {
+      const out = [];
+      if (r.sc.ag >= 3) out.push(card("상완골 전방활주가 궁금하다면", "weak",
+        "바를 가슴까지 내릴 때 앞쪽이 아프고 팔을 가로지르는 동작이 불편하면 이 개념이 언급되곤 해요. 하지만 전문 물리치료사끼리도 이 분류의 일치도가 낮았고(카파 0.30), 헬스하는 사람을 대상으로 한 연구는 아직 없어요. 전문가가 직접 봐야 확인되는 개념이에요.", "Torwichien 2020"));
+      out.push(card("라운드 숄더 때문일까요?", "weak",
+        "자세만으로 통증 원인이라고 보긴 어려워요. 등이 굽은 정도는 어깨가 아픈 사람과 안 아픈 사람 사이에 차이가 없었어요. 교정 운동으로 자세 각도는 좋아지지만, 그게 통증을 줄인다는 근거는 아직 없어요.", "Barrett 2016, Sepehri 2024"));
+      return out;
+    },
+  },
+
+  /* ---------------- 숄더 프레스 ---------------- */
+  ohp: {
+    name: "숄더 프레스", brand: "숄더 프레스 어깨 점검", eyebrow: "OVERHEAD · SHOULDER",
+    hero: "숄더 프레스할 때 어깨가 아프다면",
+    redFlags: withFlag({ id: "cuff", q: "무게를 들다가 다친 뒤로, 많이 아프지 않은데도 팔을 어깨 높이 위로 들 힘이 없나요?", level: 2 }),
+    flagLevels: withLevel({ title: "며칠 안에 정형외과 진료를 받으세요", body: "회전근개가 찢어졌을 수 있어요. 통증보다 힘이 빠진 게 더 중요한 신호예요. 일찍 볼수록 치료 선택지가 많아요." }),
+    flagSrc: "BESS/BOA 어깨 통증 진료 경로 (Rees 2021), KISS 1차 진료 요약",
+    questions: [
+      { id: "where", q: "어디가 아픈가요?", opts: [
+        ["frontside", "어깨 앞이나 옆 (삼각근 부위)"], ["top", "어깨 위쪽 한 점 (쇄골 끝)"], ["neck", "목과 어깨 사이"], ["unsure", "잘 모르겠음"] ] },
+      { id: "arc", q: "팔을 옆으로 천천히 들어 올려 보세요. 언제 아픈가요?", hint: "직접 해 보세요. 아프면 바로 멈추고, 아픈 높이만 확인하면 돼요.", figure: "arc",
+        hypo: "60~120° 기준은 논문에서 확인됐지만, 진료실에서 검사자가 한 결과예요. 혼자 해 봤을 때도 정확한지는 검증되지 않았어요.", opts: [
+        ["mid", "어깨 높이 전후, 중간에서만 아프고 더 올리면 덜해요"], ["top", "끝까지 올렸을 때만 아파요"], ["all", "올리는 내내 아파요"], ["none", "아프지 않아요"] ] },
+      { id: "style", q: "어떤 숄더 프레스를 주로 하나요?", opts: [
+        ["front", "바벨, 턱 앞으로 내림"], ["behind", "바벨, 목 뒤로 내림"], ["db", "덤벨"], ["machine", "머신"] ] },
+      { id: "ogrip", q: "바벨을 잡을 때 손 간격은 어느 정도인가요?", hint: "어깨너비는 양쪽 어깨 끝 사이 거리예요.",
+        hypo: "\"주먹 하나씩 넓게\"는 1.4배를 쉽게 바꾼 앱의 표현이에요. 실제 1.4배와 맞는지는 확인하지 않았어요.", opts: [
+        ["narrow", "어깨너비 정도"], ["medium", "어깨너비의 1.4배쯤 (어깨보다 주먹 하나씩 넓게)"], ["wide", "그보다 넓게"], ["nobar", "바벨을 쓰지 않아요"] ] },
+      { id: "side", q: "아픈 쪽 어깨를 바닥에 대고 누우면 아픈가요?", opts: [
+        ["yes", "예"], ["no", "아니오"] ] },
+      { id: "arch", q: "위로 밀 때 허리가 크게 젖혀지나요?", hint: "거울이나 영상으로 확인해 보면 좋아요.", opts: [
+        ["yes", "예"], ["no", "아니오"], ["unsure", "잘 모르겠음"] ] },
+      { id: "wall", q: "벽에 뒤통수, 등, 엉덩이를 붙이고 서서 두 팔을 머리 위로 올려 보세요. 허리를 떼지 않고 엄지가 벽에 닿나요?", hint: "직접 해 보세요. 아프면 멈추세요.",
+        hypo: "앱이 만든 확인 동작이에요. 논문에서 검증된 검사가 아니에요.", opts: [
+        ["easy", "쉽게 닿아요"], ["barely", "허리를 조금 떼야 닿아요"], ["no", "닿지 않아요"] ] },
+      { id: "shrug", q: "밀어 올릴 때 어깨가 귀 쪽으로 솟나요?", opts: [
+        ["yes", "예"], ["no", "아니오"], ["unsure", "잘 모르겠음"] ] },
+      COMMON_Q.dur, COMMON_Q.trend, COMMON_Q.acc,
+    ],
+    patterns: {
+      rc: { ...COMMON_P.rc("팔을 머리 위로 드는 동작에서 가장 흔하고, 중간 높이에서만 아픈 \"통증 호\"가 대표적인 단서예요."),
+            evText: "운동치료가 1차 치료라는 근거는 강해요. 통증 호는 진료실 검사에서 있으면 가능성을 약 2배 높이는 단서지만, 그것만으로 확진하진 못해요.", src: "Pieters 2020, Michener 2009, Hegedus 2012",
+            hypo: "통증 호 연구는 진료실에서 검사자가 한 것이에요. 혼자 해 본 결과도 같은 의미인지는 확인되지 않았어요." },
+      acj: { name: "쇄골 끝 관절 통증", plain: "어깨 위쪽, 쇄골 끝이 아픈 패턴이에요. 팔을 끝까지 올렸을 때 아픈 게 특징이에요.",
+            say: "무게를 줄이고, 계속되면 전문가에게 확인받으세요.",
+            ev: "weak", evText: "증상 특징은 영국 1차 진료 지침 요약에 나와요. 숄더 프레스와의 관계를 직접 본 연구는 없어요.", src: "KISS 요약" },
+      btn: { name: "목 뒤로 내리는 프레스 부담", plain: "바를 목 뒤로 내리면 어깨를 바깥으로 많이 돌려야 하고, 바가 머리를 피하도록 고개를 앞으로 숙이게 돼요.",
+            say: "앞으로 내리는 방식으로 바꿔 보세요.",
+            ev: "mid", evText: "숙련자 33명 분석에서 남성은 어깨 회전이 자기 가동범위를 넘었고 목이 더 굽었어요. 팔을 벌리고 바깥으로 돌린 자세에서 아픈 헬스인 사례들도 보고됐어요.", src: "McKean 2015, Kolber 2010, Bonilla 2022",
+            hypo: "목과 어깨 사이 통증을 이 패턴의 단서로 쓰는 건 앱의 추론이에요." },
+      trunk: { name: "몸통·날개뼈 고정 문제", plain: "허리가 젖혀지거나 어깨가 솟으면서, 팔을 끝까지 올리는 부담이 어깨로 몰리는 패턴이에요.",
+            say: "자세와 보조운동이 도움이 될 수 있어요.",
+            ev: "mid", evText: "등을 편 자세에서 어깨를 더 높이 올릴 수 있었어요. 다만 한 번 측정한 연구들이에요.", src: "Barrett 2016, McKean 2015, Kibler 2013",
+            hypo: "벽 팔 올리기와 \"어깨가 귀 쪽으로 솟는지\" 질문으로 이 패턴을 고르는 건 앱의 방식이에요. 검증된 검사가 아니에요." },
+    },
+    adjustments: {
+      front: { title: "앞으로 내리는 프레스로 바꾸기", how: "바를 목 뒤가 아니라 턱 앞, 윗가슴 쪽으로 내리세요.",
+               fact: "목 뒤로 내리면 남성은 어깨 바깥회전이 자기 가동범위를 넘었고 목이 더 굽었어요(다치지 않은 33명). 헬스 부상 고찰들도 바를 몸 앞으로 내리라고 권하지만, 근거는 사례 보고 수준이에요.", hypo: "앞으로 바꾸면 통증이 줄어든다는 걸 직접 확인한 연구는 없어요.", ev: "mid", src: "McKean 2015, Kolber 2010, Bonilla 2022" },
+      grip: { title: "그립을 중간 너비로", how: "손 간격을 어깨너비의 1.4배쯤으로 잡아 보세요. 너무 넓게 잡지 마세요.",
+              fact: "건강한 11명에게 1.0배·1.4배·1.7배 그립을 비교했더니, 넓은 그립은 어깨에 걸리는 회전력을 키웠고 좁은 그립은 어깨를 더 많이 벌려야 했어요. 저자들은 무거운 무게와 가동범위가 목표라면 중간이나 좁은 그립을 권했어요.", hypo: "어깨가 아픈 사람에게 1.4배가 가장 낫다는 근거는 없어요. 두 단점 사이의 중간값을 고른 앱의 가설이에요.", ev: "weak", src: "Gundersen 2026" },
+      load: { title: "무게와 횟수 낮추기", how: "통증 없이 할 수 있는 무게로 2주 동안 해 보세요.",
+              fact: "무게를 낮추는 건 어깨 통증 보존적 관리의 기본 원칙이에요.", hypo: "\"2주\"라는 기간은 앱이 정한 값이에요.", ev: "mid", src: "BESS/BOA 2021" },
+      brace: { title: "갈비뼈를 내리고 배에 힘주기", how: "밀 때 허리가 젖혀지지 않도록 배와 엉덩이에 힘을 주세요. 계속 젖혀진다면 등받이가 있는 벤치에서 해 보세요.",
+               fact: "등받이 없이 앉아서 하는 프레스는 몸통 고정이 필요했고, 여성은 허리 움직임이 더 컸어요.", hypo: "배에 힘주기와 등받이 사용이 통증을 줄인다는 건 이 결과에서 나온 앱의 추론이에요.", ev: "weak", src: "McKean 2015" },
+      tspine: { title: "등 펴기와 가동성 운동", how: "폼롤러에 윗등을 대고 뒤로 펴기, 벽에 기대 팔 올리기 연습을 해 보세요.",
+                fact: "등을 편 자세에서 어깨를 더 높이 올릴 수 있었어요. 한 번 측정한 연구들이라 꾸준히 했을 때의 효과는 아직 몰라요.", hypo: "벽 팔 올리기 결과로 이 조정을 고르는 기준은 앱이 만든 것이에요.", ev: "mid", src: "Barrett 2016, Kibler 2013" },
+      acc: COMMON_A.acc,
+    },
+    sources: [
+      ["McKean 2015, 앞으로 vs 뒤로 내리는 숄더 프레스", "https://research.usc.edu.au/esploro/outputs/journalArticle/Overhead-shoulder-press--In-front-of/99448807302621"],
+      SRC.bess, SRC.pieters, SRC.kibler, SRC.hickey, SRC.barrett,
+      ["KISS 1차 진료 어깨 통증 요약", "https://api.nbmedical.com/file/28a1e6ed-f590-4136-9cd5-3fc1b2f04263/kiss-shoulder-pain.pdf"],
+      ["Kolber 2010, 웨이트 트레이닝 관련 어깨 부상 고찰", "https://paulogentil.com/pdf/Shoulder%20Injuries%20Attributed%20to%20Resistance%20Training%20-%20A%20Brief%20Review.pdf"],
+      ["Bonilla 2022, 피트니스센터 운동 선택과 부상 고찰", "https://pmc.ncbi.nlm.nih.gov/articles/PMC9565175/"],
+      ["Michener 2009, 어깨 충돌 검사 5가지의 정확도", "https://doi.org/10.1016/j.apmr.2009.05.015"],
+      ["Hegedus 2012, 어깨 진찰 검사 메타분석", "https://upload.orthobullets.com/journalclub/free_pdf/22773322_BrJSportsMed-2012-Hegedus-bjsports-2012-091066.pdf"],
+      ["Gundersen 2026, 숄더 프레스 그립 너비와 관절 부하", "https://doi.org/10.1080/14763141.2025.2590028"]],
+    sample: { where: "frontside", arc: "mid", style: "behind", ogrip: "wide", side: "yes", arch: "yes", wall: "barely", shrug: "unsure", dur: "w2to6", trend: "same", acc: "sometimes" },
+    summary(a) { return [
+      `아픈 곳: ${label("where", a.where)}`,
+      `팔을 옆으로 들 때: ${label("arc", a.arc)}`,
+      `기간·경과: ${label("dur", a.dur)}, ${label("trend", a.trend)}`,
+      `프레스 방식: ${label("style", a.style)} / 그립: ${label("ogrip", a.ogrip)}`,
+      `아픈 쪽으로 누우면 아픔: ${label("side", a.side)} / 허리 젖혀짐: ${label("arch", a.arch)} / 어깨 솟음: ${label("shrug", a.shrug)}`,
+      `벽 팔 올리기: ${label("wall", a.wall)}`]; },
+    analyse(a) {
+      const sc = { rc: 0, acj: 0, btn: 0, trunk: 0 };
+      if (has(a, "where", "frontside")) sc.rc += 2;
+      if (has(a, "arc", "mid")) sc.rc += 3; else if (has(a, "arc", "all")) sc.rc += 1;
+      if (has(a, "side", "yes")) sc.rc += 2;
+      if (has(a, "where", "top")) sc.acj += 4;
+      if (has(a, "arc", "top")) sc.acj += 2;
+      if (has(a, "style", "behind")) sc.btn += 3;
+      if (has(a, "where", "neck")) sc.btn += 2;
+      if (has(a, "arch", "yes")) sc.trunk += 2; else if (has(a, "arch", "unsure")) sc.trunk += 1;
+      if (has(a, "wall", "no")) sc.trunk += 2; else if (has(a, "wall", "barely")) sc.trunk += 1;
+      if (has(a, "shrug", "yes")) sc.trunk += 2;
+      if (has(a, "acc", "never")) sc.trunk += 1;
+
+      const main = sc.acj > sc.rc ? "acj" : "rc";
+      const other = main === "rc" ? "acj" : "rc";
+      const patterns = [main];
+      if (sc[other] >= 3) patterns.push(other);
+      if (sc.btn >= 3) patterns.push("btn");
+      if (sc.trunk >= 2) patterns.push("trunk");
+
+      const picks = [];
+      if (has(a, "style", "behind")) picks.push(["front", 1]);
+      picks.push(["load", main === "acj" ? 2 : 6]);
+      if (has(a, "acc", "never") || has(a, "acc", "sometimes") || has(a, "shrug", "yes")) picks.push(["acc", 3]);
+      if (has(a, "arch", "yes") || has(a, "arch", "unsure")) picks.push(["brace", 4]);
+      if (has(a, "wall", "barely") || has(a, "wall", "no")) picks.push(["tspine", 5]);
+      if (has(a, "ogrip", "wide")) picks.push(["grip", 4.5]);
+      return finish(a, sc, patterns, picks, false);
+    },
+    extras() {
+      return [card("목 뒤로 내리는 프레스, 위험한가요?", "mid",
+        "무조건 위험하진 않아요. 몸통이 안정적이고 어깨 가동범위가 충분하면 앞이나 뒤 모두 안전하다는 결론이었어요. 다만 남성은 뒤로 내릴 때 어깨 회전이 자기 가동범위를 넘었고, 고개를 앞으로 숙이게 돼서 목에 문제가 있는 사람은 주의하라고 했어요. 지금 어깨가 아프다면 앞으로 내리는 방식이 무난해요.", "McKean 2015")];
+    },
+  },
+};
+
+/* =========================================================
+   RULES — 공통 규칙
+   ========================================================= */
+function has(a, q, v) { const x = a[q]; return Array.isArray(x) ? x.includes(v) : x === v; }
+function finish(a, sc, patterns, picks, referDaily) {
+  const adjustments = picks.sort((x, y) => x[1] - y[1]).slice(0, 3).map(p => p[0]);
+  const referLong = has(a, "dur", "gt6");
+  const referWorse = has(a, "trend", "worse");
+  return { sc, patterns, adjustments, referFirst: referDaily || referLong || referWorse, referDaily, referLong, referWorse };
+}
+const KIND = { fact: "논문 확인", synth: "연구 종합 해석", app: "앱 제안", hypo: "검증 안 된 가설" };
+const tag = k => `<span class="tag ${k}">${KIND[k]}</span>`;
+const basis = (k, text, src) => text ? `<div class="basis">${tag(k)}<p>${esc(text)}${src ? ` <span class="src">· ${esc(src)}</span>` : ""}</p></div>` : "";
+function card(title, ev, body, src) {
+  return `<div class="card"><div class="head"><h3>${esc(title)}</h3>${chip(ev)}</div><div class="tags">${tag("synth")}</div><p>${esc(body)}</p><p class="src">${esc(src)}</p></div>`;
+}
+
+let T, RED_FLAGS, FLAG_LEVELS, QUESTIONS, PATTERNS, ADJUSTMENTS, SOURCES;
+function setTopic(id) {
+  S.topic = id; T = TOPICS[id];
+  ({ redFlags: RED_FLAGS, flagLevels: FLAG_LEVELS, questions: QUESTIONS, patterns: PATTERNS, adjustments: ADJUSTMENTS, sources: SOURCES } = T);
+}
+function analyse(a) { return T.analyse(a); }
+
+
+
+/* =========================================================
+   STATE & STORAGE
+   ========================================================= */
+const S = { screen: "start", topic: null, agreed: false, flags: {}, qi: 0, a: {} };
+const LOG_KEY = "bench-shoulder-log";
+function loadLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || {}; } catch (e) { return {}; } }
+function saveLog(log) { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch (e) { /* 저장 불가 환경 */ } }
+let LOG = loadLog();
+const logId = id => S.topic === "bench" ? id : `${S.topic}:${id}`;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const EV = { strong: ["strong", "근거 강함"], mid: ["mid", "근거 중간"], weak: ["weak", "근거 약함"] };
+const chip = ev => `<span class="chip ${EV[ev][0]}">${EV[ev][1]}</span>`;
+const label = (qid, v) => { const q = QUESTIONS.find(x => x.id === qid); const o = q && q.opts.find(x => x[0] === v); return o ? o[1] : v; };
+
+/* =========================================================
+   VIEWS
+   ========================================================= */
+function stageIndex() {
+  return { start: -1, flags: 0, flagged: 0, q: 1, result: 3, expert: 4 }[S.screen];
+}
+
+function renderStages() {
+  const now = stageIndex();
+  document.getElementById("stages").innerHTML = STAGES.map((s, i) => {
+    let cls = i < now ? "done" : i === now ? "now" : "";
+    if (S.screen === "result" && i === 2) cls = "done";
+    return `<div class="stage ${cls}"><i></i><small>${s}</small></div>`;
+  }).join("");
+}
+
+function viewStart() {
+  return `<section class="screen stack-lg">
+    <div class="stack">
+      <p class="eyebrow">5분 자가점검</p>
+      <h1>${T ? esc(T.hero) : "운동할 때 어깨가 아프다면"}</h1>
+      <p class="lead">질문에 답하면 위험 신호를 먼저 거르고, 비슷한 통증 패턴과 다음 운동에서 바꿔볼 것, 그리고 전문가를 만나야 할 때를 알려드려요.</p>
+    </div>
+    <div class="stack">
+      <h3>어떤 운동에서 아픈가요?</h3>
+      <div class="opts" role="group" aria-label="운동 고르기">
+        ${Object.entries(TOPICS).map(([id, t]) => `<button class="opt" data-act="topic" data-v="${id}" aria-pressed="${S.topic === id}"><span class="mark"></span><span>${esc(t.name)}</span></button>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <h3>이렇게 진행돼요</h3>
+      <ol class="flow">
+        <li><em>1</em><span>위험 신호 6문항. 해당하면 바로 진료를 안내해요.</span></li>
+        <li><em>2</em><span>증상과 ${T ? esc(T.name) : "운동"} 방식에 대한 질문 ${T ? QUESTIONS.length + "개" : "10~11개"}</span></li>
+        <li><em>3</em><span>비슷한 통증 패턴과 근거의 강도</span></li>
+        <li><em>4</em><span>다음 운동에서 바꿔볼 조정 2~3개와 효과 기록</span></li>
+        <li><em>5</em><span>전문가에게 확인받아야 할 때</span></li>
+      </ol>
+    </div>
+    <div class="notice">
+      <h3>시작하기 전에</h3>
+      <p>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 결과는 진단이 아니라 운동할 때 참고할 정보예요. 통증이 계속되거나 심해지면 의사나 물리치료사의 진료를 받으세요.</p>
+      <label class="check" for="agree"><input type="checkbox" id="agree" ${S.agreed ? "checked" : ""}> 위 내용을 확인했어요</label>
+    </div>
+    <div class="row">
+      <button class="btn" data-act="start" ${S.agreed && T ? "" : "disabled"}>점검 시작</button>
+    </div>
+    ${T ? `<p class="src">먼저 둘러보고 싶다면 <button class="linkbtn" data-act="sample">예시 답변으로 결과 미리보기</button></p>` : `<p class="src">위에서 운동을 고르면 시작할 수 있어요.</p>`}
+  </section>`;
+}
+
+function viewFlags() {
+  const all = RED_FLAGS.every(f => S.flags[f.id] !== undefined);
+  return `<section class="screen stack-lg">
+    <div class="stack">
+      <p class="eyebrow">1단계 · 위험 신호</p>
+      <h2>먼저 위험 신호부터 확인할게요</h2>
+      <p class="lead">하나라도 "예"면 운동 조언 대신 진료를 안내해요.</p>
+    </div>
+    <div class="card">
+      ${RED_FLAGS.map(f => {
+        const v = S.flags[f.id];
+        return `<div class="flag"><p>${esc(f.q)}</p>
+          <div class="seg" role="group" aria-label="${esc(f.q)}">
+            <button class="yes" data-act="flag" data-id="${f.id}" data-v="1" aria-pressed="${v === true}">예</button>
+            <button class="no" data-act="flag" data-id="${f.id}" data-v="0" aria-pressed="${v === false}">아니오</button>
+          </div></div>`;
+      }).join("")}
+    </div>
+    <div class="row">
+      <button class="btn ghost" data-act="home">처음으로</button>
+      <button class="btn" data-act="flagsNext" ${all ? "" : "disabled"}>다음</button>
+    </div>
+    ${all ? "" : `<p class="src">${RED_FLAGS.length - Object.keys(S.flags).length}개 항목이 남았어요.</p>`}
+  </section>`;
+}
+
+function viewFlagged() {
+  const hits = RED_FLAGS.filter(f => S.flags[f.id]);
+  const level = Math.min(...hits.map(f => f.level));
+  const L = FLAG_LEVELS[level];
+  return `<section class="screen stack-lg">
+    <div class="alert">
+      <p class="eyebrow">위험 신호 해당</p>
+      <h2>${esc(L.title)}</h2>
+      <p>${esc(L.body)}</p>
+      ${L.call ? `<p><a href="tel:119" style="font-family:var(--font-display);font-size:32px;text-decoration:none;color:var(--danger)">119</a></p>` : ""}
+    </div>
+    <div class="card">
+      <h3>"예"라고 답한 항목</h3>
+      <ul class="sources" style="color:var(--ink);font-size:15px">${hits.map(f => `<li>${esc(f.q)}</li>`).join("")}</ul>
+      <p class="note">이 경우엔 운동 조정이나 보조운동을 안내하지 않아요. 진료를 받은 뒤 운동 복귀는 담당 의료진과 상의하세요.</p>
+    </div>
+    <div class="row">
+      <button class="btn ghost" data-act="backFlags">답 고치기</button>
+      <button class="btn ghost" data-act="home">처음으로</button>
+    </div>
+    <p class="src">근거: ${esc(T.flagSrc)}</p>
+  </section>`;
+}
+
+function barFigure(sel) {
+  const pos = { g1: 50, g15: 75, g2: 100 }[sel];
+  const hand = x => `<rect x="${x - 4}" y="22" width="8" height="26" rx="3" fill="var(--ink)"/>`;
+  const tick = (x, t) => `<line x1="${x}" y1="52" x2="${x}" y2="58" stroke="var(--muted)" stroke-width="1"/>${t ? `<text x="${x}" y="70" text-anchor="middle">${t}</text>` : ""}`;
+  return `<svg class="bar-fig" viewBox="0 0 320 78" role="img" aria-label="바벨 그립 너비 비교">
+    <line x1="8" y1="35" x2="312" y2="35" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="12" y="10" width="12" height="50" rx="2" fill="var(--plate)"/>
+    <rect x="296" y="10" width="12" height="50" rx="2" fill="var(--plate)"/>
+    <line x1="110" y1="14" x2="210" y2="14" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="160" y="10" text-anchor="middle">어깨너비</text>
+    ${tick(110, "")}${tick(85, "")}${tick(60, "")}${tick(210, "1×")}${tick(235, "1.5×")}${tick(260, "2×")}
+    ${pos ? hand(160 - pos) + hand(160 + pos) : ""}
+  </svg>`;
+}
+
+function elbowFigure(sel) {
+  const sh = { L: [130, 62], R: [190, 62] }, len = 70;
+  const angles = { tucked: 45, mid: 70, flared: 90 };
+  const arm = (deg, side, cls) => {
+    const r = deg * Math.PI / 180, s = side === "R" ? 1 : -1;
+    const [x, y] = sh[side];
+    const ex = x + s * len * Math.sin(r), ey = y + len * Math.cos(r);
+    const on = cls === "on";
+    return `<line x1="${x}" y1="${y}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${on ? "var(--plate)" : "var(--muted)"}" stroke-width="${on ? 10 : 1.5}" stroke-linecap="round" ${on ? "" : "stroke-dasharray=\"4 4\""}/>` +
+      (on ? `<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="7" fill="var(--ink)"/>` : "");
+  };
+  const lab = { 90: [272, 66], 70: [266, 96], 45: [248, 128] };
+  const label = deg => `<text x="${lab[deg][0]}" y="${lab[deg][1]}" style="${angles[sel] === deg ? "fill:var(--plate);font-weight:600" : ""}">${deg}°</text>`;
+  return `<svg class="bar-fig" viewBox="0 0 320 186" role="img" aria-label="벤치에 누운 모습을 위에서 본 팔꿈치 각도 비교">
+    <circle cx="160" cy="34" r="16" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+    <rect x="126" y="52" width="68" height="120" rx="16" fill="var(--chalk)" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="160" y="118" text-anchor="middle">몸통</text>
+    ${[45, 70, 90].filter(d => d !== angles[sel]).map(d => arm(d, "L") + arm(d, "R")).join("")}
+    ${sel ? arm(angles[sel], "L", "on") + arm(angles[sel], "R", "on") : ""}
+    ${label(90)}${label(70)}${label(45)}
+  </svg>`;
+}
+
+function arcFigure(sel) {
+  const cx = 150, cy = 100, r = 84;
+  const pt = deg => { const t = deg * Math.PI / 180; return [cx + r * Math.sin(t), cy + r * Math.cos(t)]; };
+  const arc = (a, b, color, w) => { const [x1, y1] = pt(a), [x2, y2] = pt(b); return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 0 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  const hot = k => sel === k || sel === "all";
+  const armDeg = sel === "top" ? 165 : sel === "mid" ? 90 : sel === "all" ? 120 : 90;
+  const [ax, ay] = pt(armDeg);
+  return `<svg class="bar-fig" viewBox="0 0 320 200" role="img" aria-label="팔을 옆으로 들어 올리는 범위와 아픈 구간">
+    ${arc(8, 60, "var(--muted)", 2)}
+    ${arc(60, 120, "var(--warn)", hot("mid") ? 10 : 4)}
+    ${arc(120, 172, "var(--plate)", hot("top") ? 10 : 4)}
+    <circle cx="${cx - 26}" cy="${cy - 36}" r="15" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+    <rect x="${cx - 50}" y="${cy - 16}" width="48" height="96" rx="14" fill="var(--chalk)" stroke="var(--muted)" stroke-width="1.5"/>
+    <line x1="${cx}" y1="${cy}" x2="${ax.toFixed(1)}" y2="${ay.toFixed(1)}" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="var(--ink)"/>
+    <text x="${cx + r + 8}" y="${cy + 4}">90°</text>
+    <text x="${cx}" y="${cy - r - 8}" text-anchor="middle">180°</text>
+    <text x="${cx + 10}" y="${cy + r + 10}">0°</text>
+  </svg>`;
+}
+
+function viewQuestion() {
+  const q = QUESTIONS[S.qi];
+  const v = S.a[q.id];
+  const answered = q.multi ? Array.isArray(v) && v.length > 0 : v !== undefined;
+  const pressed = val => q.multi ? (Array.isArray(v) && v.includes(val)) : v === val;
+  return `<section class="screen stack-lg">
+    <div class="stack">
+      <div class="head"><p class="eyebrow">2단계 · 증상 질문</p><span class="qcount">${S.qi + 1} / ${QUESTIONS.length}</span></div>
+      <h2>${esc(q.q)}</h2>
+      ${q.hint ? `<p class="lead">${esc(q.hint)}</p>` : ""}
+      ${basis("hypo", q.hypo)}
+    </div>
+    ${q.figure === "bar" ? `<div class="card">${barFigure(v)}<p class="src">파란 원판 사이의 검은 막대가 지금 고른 손 위치예요.</p></div>` : ""}
+    ${q.figure === "arc" ? `<div class="card">${arcFigure(v)}<p class="src">앞에서 본 모습이에요. 노란 구간이 어깨 높이 전후(60~120°), 파란 구간이 끝까지 올리는 범위예요. 60~120° 기준은 Michener 2009을 따랐어요.</p></div>` : ""}
+    ${q.figure === "elbow" ? `<div class="card">${elbowFigure(v)}<p class="src">${v ? "파란 팔이 지금 고른 각도예요. 점선은 다른 선택지예요." : "아래에서 고르면 그림에 표시돼요."} 몸통에 바짝은 45°, 중간은 약 70°, 일자는 90°예요.</p></div>` : ""}
+    <div class="opts" role="group" aria-label="${esc(q.q)}">
+      ${q.opts.map(([val, text]) => q.imgs ? `<button class="opt pic" data-act="choose" data-v="${val}" aria-pressed="${pressed(val)}"><img src="${q.imgs[val]}" alt="${esc(text)}: 바벨을 잡은 손 간격을 위에서 본 사진" width="900" height="298"><span class="pic-label"><span class="mark"></span><span>${esc(text)}</span></span></button>` : `<button class="opt ${q.multi ? "multi" : ""}" data-act="choose" data-v="${val}" aria-pressed="${pressed(val)}"><span class="mark"></span><span>${esc(text)}</span></button>`).join("")}
+    </div>
+    <div class="row">
+      <button class="btn ghost" data-act="prev">이전</button>
+      <button class="btn" data-act="next" ${answered ? "" : "disabled"}>${S.qi === QUESTIONS.length - 1 ? "결과 보기" : "다음"}</button>
+    </div>
+  </section>`;
+}
+
+function viewResult() {
+  const r = analyse(S.a);
+  const today = new Date().toISOString().slice(0, 10);
+  const pats = r.patterns.map((id, i) => {
+    const p = PATTERNS[id];
+    return `<div class="card">
+      <div class="head"><div class="stack" style="gap:2px"><span class="eyebrow">${i === 0 ? "가장 가까운 패턴" : "함께 보이는 패턴"}</span><h3>${esc(p.name)}</h3></div>${chip(p.ev)}</div>
+      <div class="tags">${tag("synth")}</div>
+      <p>${esc(p.plain)}</p>
+      <p><b>${esc(p.say)}</b></p>
+      ${basis("fact", p.evText, p.src)}
+      ${basis("hypo", p.hypo)}
+    </div>`;
+  }).join("");
+
+  const adj = r.adjustments.map(id => {
+    const d = ADJUSTMENTS[id];
+    const entries = LOG[logId(id)] || [];
+    const last = entries[entries.length - 1];
+    const msg = !last ? "다음 운동 후에 기록해 주세요." :
+      last.v === "less" ? `${last.d}: 덜 아팠어요. 이 조정이 나에게 맞는 단서예요.` :
+      last.v === "same" ? `${last.d}: 같았어요. 다른 조정과 함께 2주는 지켜보세요.` :
+      `${last.d}: 더 아팠어요. 이 조정은 멈추고, 계속 아프면 전문가에게 확인받으세요.`;
+    return `<div class="adj">
+      <div class="head"><h3>${esc(d.title)}</h3>${chip(d.ev)}</div>
+      ${basis("app", d.how)}
+      ${basis("fact", d.fact, d.src)}
+      ${basis("hypo", d.hypo)}
+      <div class="log">
+        <div class="seg" role="group" aria-label="${esc(d.title)} 효과 기록">
+          <button data-act="log" data-id="${id}" data-v="less" aria-pressed="${last && last.d === today && last.v === "less"}">덜 아팠어요</button>
+          <button data-act="log" data-id="${id}" data-v="same" aria-pressed="${last && last.d === today && last.v === "same"}">같았어요</button>
+          <button data-act="log" data-id="${id}" data-v="more" aria-pressed="${last && last.d === today && last.v === "more"}">더 아팠어요</button>
+        </div>
+        <p class="logmsg">${esc(msg)}</p>
+      </div>
+    </div>`;
+  }).join("");
+
+  const refer = r.referFirst ? `<div class="notice" style="background:var(--warn-tint)">
+      <h3>이 경우엔 진료를 먼저 권해요</h3>
+      <p>${[r.referDaily && "운동하지 않을 때도 아프고", r.referLong && "6주 넘게 계속되고", r.referWorse && "점점 나빠지고"].filter(Boolean).join(", ")} 있어요. 아래 조정은 참고만 하고, 정형외과나 재활의학과에서 먼저 확인받으세요.</p>
+    </div>` : "";
+
+  return `<section class="screen stack-lg">
+    <div class="stack">
+      <p class="eyebrow">3단계 · 패턴 안내</p>
+      <h2>이런 답을 한 분들에게 흔한 패턴이에요</h2>
+      <p class="lead">진단이 아니라, 어디서 무엇을 바꿔볼지 정하기 위한 안내예요.</p>
+    </div>
+    <div class="card legend">
+      <h3>이 결과를 읽는 법</h3>
+      <p class="src">모든 내용에 아래 네 가지 중 하나를 붙였어요. 근거의 출처와 한계를 함께 보여드리기 위해서예요.</p>
+      <ul class="kinds">
+        <li>${tag("fact")}<span>논문 본문에서 직접 확인한 결과</span></li>
+        <li>${tag("synth")}<span>여러 연구를 종합해서 내린 해석</span></li>
+        <li>${tag("app")}<span>연구를 바탕으로 앱이 권하는 실용적인 방법</span></li>
+        <li>${tag("hypo")}<span>앱이 세운 것으로, 아직 연구로 확인되지 않은 부분</span></li>
+      </ul>
+      ${basis("hypo", "답변으로 패턴과 조정을 고르는 점수 규칙은 앱이 만든 것이에요. 전문가 검토 전이에요.")}
+    </div>
+    ${refer}
+    ${pats}
+    ${T.extras(r).join("")}
+
+    <div class="stack">
+      <p class="eyebrow">4단계 · 바로 해볼 조정</p>
+      <h2>다음 운동에서 이것부터 바꿔 보세요</h2>
+      <p class="lead">운동이 끝나면 각 조정 아래에 기록하세요. 덜 아프게 만든 조정이 나에게 맞는 단서예요.</p>
+    </div>
+    <div class="card">${adj}</div>
+
+    <div class="row">
+      <button class="btn" data-act="expert">전문가에게 확인받을 때 보기</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" data-act="editAnswers">답 고치기</button>
+      <button class="btn ghost small" data-act="restart">처음부터 다시</button>
+    </div>
+
+    <div class="card">
+      <h3>근거 자료</h3>
+      <ul class="sources">${SOURCES.map(([t, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul>
+    </div>
+  </section>`;
+}
+
+function summaryText(r) {
+  const lines = [`[${T.name} 어깨 자가점검 요약]`, ...T.summary(S.a), `앱이 본 패턴: ${r.patterns.map(p => PATTERNS[p].name).join(", ")}`];
+  const logged = Object.keys(ADJUSTMENTS).filter(k => (LOG[logId(k)] || []).length);
+  if (logged.length) {
+    lines.push("조정 기록:");
+    logged.forEach(k => { const arr = LOG[logId(k)]; const l = arr[arr.length - 1]; lines.push(`- ${ADJUSTMENTS[k].title}: ${{ less: "덜 아팠음", same: "같았음", more: "더 아팠음" }[l.v]} (${l.d})`); });
+  }
+  return lines.join("\n");
+}
+
+function viewExpert() {
+  const r = analyse(S.a);
+  const rows = [
+    ["조정을 2주 해도 그대로이거나 나빠짐", "정형외과·재활의학과 → 물리치료", "원인 확인과 재활 계획이 필요해요", r.referWorse],
+    ["운동 안 할 때도 아프거나 6주 넘게 지속", "정형외과·재활의학과", "오래된 통증은 진료가 먼저예요", r.referDaily || r.referLong],
+    ["통증은 줄었는데 자세가 불안함", "트레이너", "폼 교정과 프로그램 조정", false],
+  ];
+  return `<section class="screen stack-lg">
+    <div class="stack">
+      <p class="eyebrow">5단계 · 전문가 연결</p>
+      <h2>이럴 땐 전문가에게 확인받으세요</h2>
+      <p class="lead">2주는 다 나을 때까지 기다리는 기간이 아니라, 한 번 확인받을 시점이에요. 물리치료 운동 프로그램은 보통 12주 정도 걸려요.</p>
+      ${basis("hypo", "\"2주\"는 앱이 정한 확인 시점이에요. 영국 1차 진료 요약은 운동치료로 좋아지는 데 6~12주를 보고, 그때도 나아지지 않으면 의뢰하라고 해요.")}
+    </div>
+    <div class="card tablewrap">
+      <table>
+        <thead><tr><th>상황</th><th>찾아갈 곳</th><th>이유</th></tr></thead>
+        <tbody>${rows.map(([a, b, c, hit]) => `<tr class="${hit ? "hit" : ""}"><td>${esc(a)}${hit ? "<br><span class=\"src\" style=\"color:var(--plate)\">내 답변에 해당</span>" : ""}</td><td>${esc(b)}</td><td>${esc(c)}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>전문가에게 보여줄 요약</h3>
+      <p class="src">진료나 상담 때 이 내용을 보여주면 설명 시간이 줄어요.</p>
+      <pre class="summary" id="summary">${esc(summaryText(r))}</pre>
+      <div class="row"><button class="btn small" data-act="copy">요약 복사</button></div>
+      <p class="logmsg" id="copymsg"></p>
+    </div>
+    <div class="notice">
+      <h3>트레이너·물리치료 연결은 준비 중이에요</h3>
+      <p>나중에는 이 요약을 들고 가까운 전문가와 바로 연결할 수 있게 만들 예정이에요.</p>
+    </div>
+    <div class="row">
+      <button class="btn ghost" data-act="toResult">결과로 돌아가기</button>
+      <button class="btn ghost" data-act="restart">처음부터 다시</button>
+    </div>
+  </section>`;
+}
+
+function render() {
+  renderStages();
+  document.getElementById("brandName").textContent = T ? T.brand : "운동 어깨 점검";
+  document.getElementById("brandTag").textContent = T ? T.eyebrow : "SHOULDER CHECK";
+  const v = { start: viewStart, flags: viewFlags, flagged: viewFlagged, q: viewQuestion, result: viewResult, expert: viewExpert }[S.screen];
+  document.getElementById("main").innerHTML = v();
+}
+function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+const ACT = {
+  topic(d) { if (S.topic !== d.v) { S.flags = {}; S.a = {}; S.qi = 0; } setTopic(d.v); render(); },
+  start() { go("flags"); },
+  home() { go("start"); },
+  sample() { S.agreed = true; S.flags = Object.fromEntries(RED_FLAGS.map(f => [f.id, false])); S.a = JSON.parse(JSON.stringify(T.sample)); S.qi = QUESTIONS.length - 1; go("result"); },
+  flag(d) { S.flags[d.id] = d.v === "1"; const y = window.scrollY; render(); window.scrollTo(0, y); },
+  flagsNext() { go(RED_FLAGS.some(f => S.flags[f.id]) ? "flagged" : "q"); },
+  backFlags() { go("flags"); },
+  choose(d) {
+    const q = QUESTIONS[S.qi];
+    if (q.multi) {
+      let cur = Array.isArray(S.a[q.id]) ? S.a[q.id].slice() : [];
+      if (d.v === "none") cur = cur.includes("none") ? [] : ["none"];
+      else { cur = cur.filter(x => x !== "none"); cur = cur.includes(d.v) ? cur.filter(x => x !== d.v) : cur.concat(d.v); }
+      S.a[q.id] = cur;
+    } else S.a[q.id] = d.v;
+    render();
+  },
+  prev() { if (S.qi === 0) go("flags"); else { S.qi--; go("q"); } },
+  next() { if (S.qi < QUESTIONS.length - 1) { S.qi++; go("q"); } else go("result"); },
+  log(d) {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = logId(d.id);
+    const arr = (LOG[key] || []).filter(e => e.d !== today);
+    arr.push({ d: today, v: d.v });
+    LOG[key] = arr; saveLog(LOG);
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  },
+  expert() { go("expert"); },
+  toResult() { go("result"); },
+  editAnswers() { S.qi = 0; go("q"); },
+  restart() { S.flags = {}; S.a = {}; S.qi = 0; go("start"); },
+  copy() {
+    const el = document.getElementById("summary"), msg = document.getElementById("copymsg");
+    const done = () => { msg.textContent = "복사했어요."; };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); msg.textContent = "복사가 막혀 있어요. 선택된 글을 길게 눌러 복사해 주세요."; };
+    try { navigator.clipboard.writeText(el.textContent).then(done, fallback); } catch (e) { fallback(); }
+  },
+};
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act]");
+  if (!t || t.disabled) return;
+  ACT[t.dataset.act](t.dataset);
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "agree") { S.agreed = e.target.checked; render(); document.getElementById("agree").focus(); }
+});
+
+render();
+</script>
