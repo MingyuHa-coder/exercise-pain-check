@@ -117,7 +117,7 @@ expectBlocked("신규 ID 중복", [NS(), NS({ doi: "10.9999/other" })], null, "I
 expectBlocked("같은 DOI를 두 신규 ID로 등록", [NS(), NS({ new_study_id: "new:fixture-c" })], null, "DOI가");
 expectBlocked("existence_checked가 Y/N이 아님", [NS({ existence_checked: "yes" })], null, "existence_checked");
 /* 서지 존재 확인 전(Y가 아님) 신규 연구: 조사 후보 연결은 되지만 근거 판단을 확정하는 관계는 막힘 */
-["support_direct", "contradict", "indirect"].forEach(rel => {
+["support_direct", "contradict", "indirect", "not_applicable"].forEach(rel => {
   expectBlocked(`존재 확인 N인 신규 연구를 ${rel}로 기록`, [NS({ existence_checked: "N" })], [MR({ relation_to_app: rel })], "서지 존재 확인 전");
 });
 expectBlocked("존재 확인 빈칸인 신규 연구를 contradict로 기록", [NS({ existence_checked: "" })], [MR({ relation_to_app: "contradict" })], "서지 존재 확인 전");
@@ -136,6 +136,40 @@ test("A. 정상: 앱 인용 연구는 신규 목록·존재 확인 없이 지금
   if (r.errors.length) return "오류: " + r.errors.join(" / ");
   const l = d.links.find(x => x.study_id === "noteboom-2024" && x.location_id === "bench.adj.grip.fact");
   return (l && l.work_relation === "contradict") || "앱 인용 연구 연결이 자료에 없음";
+});
+expectBlocked("존재 확인 빈칸인 신규 연구를 not_applicable로 기록", [NS({ existence_checked: "", existence_source: "" })], [MR({ relation_to_app: "not_applicable" })], "서지 존재 확인 전");
+/* 서지 확인 Y여도 E0(존재만 확인) 행으로는 판단을 기록할 수 없음 */
+["support_direct", "contradict", "indirect", "not_applicable"].forEach(rel => {
+  expectBlocked(`서지 확인 Y인 신규 연구의 E0 행을 ${rel}로 기록`, [NS()], [MR({ finding_type: "E0", relation_to_app: rel })], "E0");
+});
+expectBlocked("앱 인용 연구의 E0 행을 not_applicable로 기록", null, [MR({ study_id: "noteboom-2024", finding_type: "E0", relation_to_app: "not_applicable" })], "E0");
+expectBlocked("서지 확인 Y인데 내용(finding_text) 없이 not_applicable로 기록", [NS()], [MR({ finding_text: "", relation_to_app: "not_applicable" })], "finding_text");
+test("A. 정상: 서지 확인 Y + E0 행은 판단 보류로만 연결 가능", () => {
+  const root = withWork([NS()], [MR({ finding_type: "E0", finding_text: "", relation_to_app: "undetermined" })]);
+  const d = rebuild(root);
+  const r = verify(root);
+  if (r.errors.length) return "오류: " + r.errors.join(" / ");
+  const a = d.newLinks.find(x => x.new_study_id === "new:fixture-a-2099");
+  return (a && a.relation_label === "판단 보류") || JSON.stringify(a);
+});
+test("A. 정상: 서지 확인 Y + 내용(E1·finding_text) 기록 후에는 not_applicable 가능", () => {
+  const root = withWork([NS()], [MR({ relation_to_app: "not_applicable" })]);
+  const d = rebuild(root);
+  const r = verify(root);
+  if (r.errors.length) return "오류: " + r.errors.join(" / ");
+  return (d.newLinks.find(x => x.new_study_id === "new:fixture-a-2099") || {}).relation_label === "적용 어려움" || "연결이 자료에 없음";
+});
+test("A. 정상: 서지 확인 Y만 있고 행렬 결과가 없으면 관계·결과 종류는 비어 있음 (내용 검증된 것처럼 보이지 않음)", () => {
+  const root = withWork([NS()], null);
+  const d = rebuild(root);
+  const a = d.newLinks.find(x => x.new_study_id === "new:fixture-a-2099");
+  return (a && a.existence_checked === "Y" && !a.relation_to_app && !a.finding_type && !a.work_grade) || JSON.stringify(a);
+});
+test("A. 정상: 앱 인용 연구는 지금처럼 E1 결과와 함께 not_applicable로 연결 가능", () => {
+  const root = withWork(null, [MR({ study_id: "noteboom-2024", relation_to_app: "not_applicable" })]);
+  rebuild(root);
+  const r = verify(root);
+  return r.errors.length === 0 || "오류: " + r.errors.join(" / ");
 });
 expectBlocked("관계 값이 정해진 목록 밖", [NS()], [MR({ relation_to_app: "supports" })], "relation_to_app");
 expectBlocked("결과 종류 값이 E0~E4·E9 밖", [NS()], [MR({ finding_type: "E5" })], "finding_type");

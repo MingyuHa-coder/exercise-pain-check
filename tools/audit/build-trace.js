@@ -339,7 +339,7 @@ function workMd(d) {
   s += `- 신규 연구 목록 (\`docs/audit/work/${topic}-new-studies.csv\`): ${work.newStudies ? `${work.newStudies.rows.length}개` : "없음"}\n`;
   s += `- 앱 인용 연구 중 Work 결과가 붙은 근거 연결: ${links.filter(x => x.work_matrix_row).length}줄 / ${links.length}줄\n\n`;
   if (newLinks.length) {
-    s += `### 신규 발굴 연구와 앱 주장의 관계\n\n| 신규 연구 | 식별 | 존재 확인 | 결과 종류 | 앱 대상 | 관계 |\n| --- | --- | --- | --- | --- | --- |\n`;
+    s += `### 신규 발굴 연구와 앱 주장의 관계\n\n| 신규 연구 | 식별 | 서지 확인 (내용 검증 아님) | 결과 종류 | 앱 대상 | 관계 |\n| --- | --- | --- | --- | --- | --- |\n`;
     newLinks.forEach(n => { s += `| \`${n.new_study_id}\` ${md(n.title)} | ${[n.doi && "DOI " + n.doi, n.pmid && "PMID " + n.pmid].filter(Boolean).join(" · ") || "-"} | ${n.existence_checked || "-"} | ${n.finding_type ? `${n.finding_type} ${W.FINDING_TYPES[n.finding_type] || ""}` : "-"} | ${n.target_location_id || n.target_rule_ids || "(연결 없음)"} | ${n.relation_label || "-"} |\n`; });
   }
   return s;

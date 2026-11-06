@@ -92,10 +92,10 @@ node tools/audit/test-audit.js                   # 추적 시스템 자체의 �
 
 **서지 존재 확인과 내용 검증은 별개다.** `existence_checked = Y`는 DOI·PubMed 등에서 그 논문이 실제로 있고 서지 정보가 맞다는 뜻일 뿐, 논문 전문을 읽고 내용을 검증했다는 뜻이 아니다. 내용은 행렬의 `finding_type`·`finding_text`에, 앱 주장과의 관계는 `relation_to_app`에 따로 적는다.
 
-- 서지 정보를 아직 확인하지 못한 신규 연구(`existence_checked`가 N 또는 빈칸)도 **조사 후보로 등록하고** 앱 주장·규칙에 연결할 수 있다. 다만 관계는 `undetermined`(판단 보류) 또는 `not_applicable`만 쓸 수 있고, 근거 판단을 확정하는 `support_direct`·`contradict`·`indirect`는 검증이 막는다.
+- 서지 정보를 아직 확인하지 못한 신규 연구(`existence_checked`가 N 또는 빈칸)도 **조사 후보로 등록하고** 앱 주장·규칙에 연결할 수 있다. 다만 관계는 `undetermined`(판단 보류)만 쓸 수 있다. `support_direct`·`contradict`·`indirect`·`not_applicable`은 모두 논문의 대상·설계·결과를 보고 내리는 판단이라 검증이 막는다.
 - `existence_checked = Y`이면 확인한 곳(`existence_source`)을 반드시 적는다. 비어 있으면 검증이 막는다.
 - 앱이 이미 인용한 연구는 신규 목록에 등록하지 않으므로 이 규칙과 관계없이 지금처럼 연결한다.
-- 존재만 확인한 연구(E0)로는 지지·반박·간접 근거를 기록할 수 없다(검증이 막는다). 관계를 적으면 대상(`location_id` 또는 `rule_ids`)과 보고 내용(`finding_text`)도 있어야 한다.
+- 서지 확인 Y만으로는 판단을 기록할 수 없다. `finding_type = E0`(서지 존재만 확인)인 행은 앱 인용 연구든 신규 연구든 `undetermined`만 쓸 수 있다. 판단(`support_direct`·`contradict`·`indirect`·`not_applicable`)을 적으려면 논문 내용을 확인해 `finding_type`(E1~E4·E9)과 `finding_text`를 함께 적어야 한다(검증이 막는다). 관계를 적으면 대상(`location_id` 또는 `rule_ids`)과 보고 내용(`finding_text`)도 있어야 한다.
 
 ### 앱과의 관계 (`relation_to_app`)
 
@@ -104,8 +104,8 @@ node tools/audit/test-audit.js                   # 추적 시스템 자체의 �
 | `support_direct` | 직접 지지 — 같은 대상·같은 상황에서 앱 주장과 같은 결과를 보고 |
 | `contradict` | 반박 — 앱 주장과 반대되는 결과를 보고 |
 | `indirect` | 간접 근거 — 관련은 있지만 대상·상황·결과 종류가 다름 (예: 생체역학 결과로 통증 감소를 말하는 경우) |
-| `not_applicable` | 적용 어려움 — 대상·설계가 달라 앱 주장에 쓰기 어려움 |
-| `undetermined` | 판단 보류 — 아직 정하지 않음 (대상 없이 적어도 됨) |
+| `not_applicable` | 적용 어려움 — 대상·설계가 달라 앱 주장에 쓰기 어려움 (대상·설계를 확인해야 하므로 서지 확인 전 신규 연구와 E0 행에는 쓸 수 없음) |
+| `undetermined` | 판단 보류 — 아직 정하지 않음 (대상 없이 적어도 됨). 서지 확인 전 신규 연구와 E0 행에서 쓸 수 있는 유일한 값 |
 
 관계를 정하는 것은 Work와 전문가 검토의 몫이다. 이 도구는 값이 목록 안에 있는지와 연결 대상이 실제로 있는지만 검사한다.
 

@@ -5,7 +5,7 @@
    세 가지를 섞지 않는다:
      1) 논문이 존재하는지        → new-studies.csv 의 existence_checked / existence_source
         (서지 정보 확인일 뿐, 논문 전문의 내용을 검증했다는 뜻이 아니다.
-         Y가 아닌 신규 연구는 조사 후보로 등록·연결할 수 있지만 지지·반박·간접 근거로는 기록할 수 없다)
+         Y가 아닌 신규 연구는 조사 후보로 등록·연결할 수 있지만 관계는 undetermined(판단 보류)만 가능)
      2) 논문이 무엇을 보고했는지  → evidence-matrix.csv 의 finding_type(E0~E4·E9), finding_text
      3) 그 결과가 앱 주장과 어떤 관계인지 → evidence-matrix.csv 의 relation_to_app (대상: location_id·rule_ids)
    이 파일들은 docs/audit 자료에만 반영된다. 앱(content/·js/)의 근거 표시·문구·검토 상태는 바뀌지 않는다.
@@ -14,8 +14,11 @@ const fs = require("fs");
 const path = require("path");
 
 const FINDING_TYPES = { E0: "논문 존재·서지 확인만", E1: "측정·생체역학 결과 보고", E2: "조정·치료의 통증·기능 효과 보고", E3: "요인과 증상·소견의 연관 보고", E4: "지침·합의 권고", E9: "기타·분류 어려움" };
-/* 근거 판단을 확정하는 관계: 서지 존재가 확인된(existence_checked = Y) 신규 연구에만 쓸 수 있다 */
-const CONFIRMING_RELATIONS = ["support_direct", "contradict", "indirect"];
+/* 논문 대상·설계·결과를 보고 내리는 판단(판단 보류 외 전부).
+   - 서지 존재가 확인되지 않은(existence_checked ≠ Y) 신규 연구에는 쓸 수 없다 → undetermined만 허용
+   - finding_type = E0(서지 존재만 확인)인 행에도 쓸 수 없다
+   서지 확인 Y는 논문이 있다는 뜻일 뿐 내용 검증이 아니다. 판단을 적으려면 finding_type(E1~E4·E9)과 finding_text가 따로 있어야 한다. */
+const CONFIRMING_RELATIONS = ["support_direct", "contradict", "indirect", "not_applicable"];
 const RELATIONS = { support_direct: "직접 지지", contradict: "반박", indirect: "간접 근거", not_applicable: "적용 어려움", undetermined: "판단 보류" };
 const NEW_PREFIX = "new:";
 const MATRIX_COLS = ["matrix_row_id", "study_id", "citation", "location_id", "rule_ids", "finding_type", "population", "study_design", "finding_text", "relation_to_app", "relation_note", "work_grade", "checked_by", "checked_date", "notes"];
@@ -92,7 +95,7 @@ function validateWork(work, ctx) {
       else if (sid.startsWith(NEW_PREFIX)) {
         if (!newIds.has(sid)) bad.push(`${at}: 신규 연구 ${sid}가 신규 연구 목록(${path.basename(work.newPath)})에 없음`);
         else if (newIds.get(sid).existence_checked !== "Y" && CONFIRMING_RELATIONS.includes(r.relation_to_app))
-          bad.push(`${at}: 신규 연구 ${sid}는 서지 존재 확인 전(existence_checked=${newIds.get(sid).existence_checked || "빈칸"})이라 ${r.relation_to_app}(${RELATIONS[r.relation_to_app]})로 기록할 수 없음 → 존재를 확인해 Y와 existence_source를 적거나, 관계를 undetermined로 둘 것`);
+          bad.push(`${at}: 신규 연구 ${sid}는 서지 존재 확인 전(existence_checked=${newIds.get(sid).existence_checked || "빈칸"})이라 ${r.relation_to_app}(${RELATIONS[r.relation_to_app]})로 기록할 수 없음 (undetermined만 가능) → 존재를 확인해 Y와 existence_source를 적고 내용을 확인하거나, 관계를 undetermined로 둘 것`);
       }
       else if (!ctx.appStudyIds.has(sid)) bad.push(`${at}: ${sid}는 앱이 인용한 연구 ID가 아님 (새로 찾은 연구면 "new:" ID로 신규 목록에 등록)`);
       if (r.location_id && !ctx.locIds.has(r.location_id)) bad.push(`${at}: 위치 ID ${r.location_id} 없음`);
@@ -103,7 +106,7 @@ function validateWork(work, ctx) {
         if (!r.location_id && !r.rule_ids) bad.push(`${at}: 앱과의 관계(${r.relation_to_app})를 적었으면 대상 location_id 또는 rule_ids가 있어야 함`);
         if (!r.finding_text) bad.push(`${at}: 앱과의 관계를 적었으면 논문이 보고한 내용(finding_text)이 있어야 함`);
         if (!r.finding_type) bad.push(`${at}: 앱과의 관계를 적었으면 finding_type이 있어야 함`);
-        if (r.finding_type === "E0" && ["support_direct", "contradict", "indirect"].includes(r.relation_to_app)) bad.push(`${at}: E0(존재만 확인)으로는 지지·반박·간접 근거를 기록할 수 없음`);
+        if (r.finding_type === "E0" && CONFIRMING_RELATIONS.includes(r.relation_to_app)) bad.push(`${at}: E0(존재만 확인)으로는 지지·반박·간접 근거·적용 어려움을 기록할 수 없음 (undetermined만 가능)`);
       }
     });
     ok("Work 행렬: 연구 ID·위치·규칙·결과 종류·관계 값", bad.length === 0, bad.join(" / "));
