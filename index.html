@@ -104,6 +104,12 @@ a { color: var(--plate); }
 .check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--plate); flex: none; }
 
 .opts { display: flex; flex-direction: column; gap: 8px; }
+.parts { display: flex; flex-wrap: wrap; gap: 8px; }
+.parts.body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.part { appearance: none; background: var(--card); color: inherit; border: 1.5px solid var(--line); border-radius: 999px; padding: 9px 16px; min-height: 44px; font-size: 15px; cursor: pointer; }
+.part[aria-pressed="true"] { border-color: var(--plate); background: var(--plate); color: var(--card); font-weight: 600; }
+.part:focus-visible { outline: 3px solid var(--plate); outline-offset: 2px; }
+.subq { font-size: 15px; color: var(--muted, inherit); margin: 4px 0 0; }
 .opt { appearance: none; text-align: left; width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; gap: 12px; align-items: center; min-height: 54px; font-size: 16px; }
 .opt .mark { width: 20px; height: 20px; flex: none; border: 2px solid var(--line); border-radius: 50%; display: grid; place-items: center; }
 .opt.multi .mark { border-radius: 5px; }
@@ -1066,10 +1072,34 @@ TOPICS.run = {
   },
 };
 
+/* ---------------- 부위 → 운동 → 아픈 곳 ---------------- */
+/* at: [아픈 곳, 주제 id, 미리 채울 답] */
+const BODY = [
+  { id: "chest", name: "가슴", ex: [
+    { n: "벤치프레스", at: [["어깨", "bench"], ["손목", "wri", { ex: "press" }]] },
+    { n: "딥스", at: [["손목", "wri", { ex: "dips" }]] },
+    { n: "푸시업", at: [["손목", "wri", { ex: "push" }]] } ] },
+  { id: "shoulder", name: "어깨", ex: [
+    { n: "숄더 프레스", at: [["어깨", "ohp"], ["손목", "wri", { ex: "press" }]] },
+    { n: "레터럴 레이즈", at: [["어깨", "lat", { ex: "lat" }]] },
+    { n: "업라이트 로우", at: [["어깨", "lat", { ex: "urow" }]] } ] },
+  { id: "back", name: "등", ex: [
+    { n: "데드리프트", at: [["허리", "dl"]] },
+    { n: "풀업·랫풀다운", at: [["팔꿈치", "elb", { ex: "pull" }]] } ] },
+  { id: "arm", name: "팔", ex: [
+    { n: "바벨·덤벨 컬", at: [["팔꿈치", "elb", { ex: "curl" }]] } ] },
+  { id: "leg", name: "하체", ex: [
+    { n: "스쿼트", at: [["무릎", "sqk", { style: "back" }], ["허리", "sqb"]] },
+    { n: "런지", at: [["무릎", "sqk", { style: "lunge" }]] },
+    { n: "레그프레스", at: [["무릎", "sqk", { style: "machine" }]] } ] },
+  { id: "cardio", name: "유산소", ex: [
+    { n: "달리기", at: [["무릎·정강이", "run"]] } ] },
+];
+
 /* =========================================================
    STATE & STORAGE
    ========================================================= */
-const S = { screen: "start", topic: null, agreed: false, flags: {}, qi: 0, a: {} };
+const S = { screen: "start", topic: null, part: null, exi: null, area: null, agreed: false, flags: {}, qi: 0, a: {} };
 const LOG_KEY = "bench-shoulder-log";
 function loadLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || {}; } catch (e) { return {}; } }
 function saveLog(log) { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch (e) { /* 저장 불가 환경 */ } }
@@ -1097,6 +1127,26 @@ function renderStages() {
   }).join("");
 }
 
+function viewPicker() {
+  const part = BODY.find(b => b.id === S.part);
+  const ex = part && part.ex[S.exi];
+  return `<div class="parts body" role="group" aria-label="운동 부위">
+      ${BODY.map(b => `<button class="part" data-act="part" data-v="${b.id}" aria-pressed="${S.part === b.id}">${esc(b.name)}</button>`).join("")}
+    </div>
+    ${part ? `<div class="opts" role="group" aria-label="${esc(part.name)} 운동">
+      ${part.ex.map((e, i) => `<button class="opt" data-act="exer" data-v="${i}" aria-pressed="${S.exi === i}"><span class="mark"></span><span>${esc(e.n)}</span></button>`).join("")}
+    </div>` : `<p class="subq">운동한 부위를 먼저 골라 주세요.</p>`}
+    ${ex && ex.at.length > 1 ? `<p class="subq">${esc(ex.n)}에서 어디가 아픈가요?</p>
+    <div class="parts" role="group" aria-label="아픈 곳">
+      ${ex.at.map((x, i) => `<button class="part" data-act="area" data-v="${i}" aria-pressed="${S.area === i}">${esc(x[0])}</button>`).join("")}
+    </div>` : ""}`;
+}
+
+function pickArea(at, i) {
+  S.area = i; S.pre = at[2] || {}; S.flags = {}; S.a = Object.assign({}, S.pre); S.qi = 0;
+  setTopic(at[1]); render();
+}
+
 function viewStart() {
   return `<section class="screen stack-lg">
     <div class="stack">
@@ -1106,9 +1156,7 @@ function viewStart() {
     </div>
     <div class="stack">
       <h3>어떤 운동에서 아픈가요?</h3>
-      <div class="opts" role="group" aria-label="운동 고르기">
-        ${Object.entries(TOPICS).map(([id, t]) => `<button class="opt" data-act="topic" data-v="${id}" aria-pressed="${S.topic === id}"><span class="mark"></span><span>${esc(t.name)}</span></button>`).join("")}
-      </div>
+      ${viewPicker()}
     </div>
     <div class="card">
       <h3>이렇게 진행돼요</h3>
@@ -1418,7 +1466,10 @@ function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
    ACTIONS
    ========================================================= */
 const ACT = {
-  topic(d) { if (S.topic !== d.v) { S.flags = {}; S.a = {}; S.qi = 0; } setTopic(d.v); render(); },
+  part(d) { if (S.part !== d.v) { S.part = d.v; S.exi = null; S.area = null; S.topic = null; T = null; } render(); },
+  exer(d) { const ex = BODY.find(b => b.id === S.part).ex[+d.v]; S.exi = +d.v; S.area = null;
+    if (ex.at.length === 1) pickArea(ex.at[0], 0); else { S.topic = null; T = null; render(); } },
+  area(d) { const ex = BODY.find(b => b.id === S.part).ex[S.exi]; pickArea(ex.at[+d.v], +d.v); },
   start() { go("flags"); },
   home() { go("start"); },
   sample() { S.agreed = true; S.flags = Object.fromEntries(RED_FLAGS.map(f => [f.id, false])); S.a = JSON.parse(JSON.stringify(T.sample)); S.qi = QUESTIONS.length - 1; go("result"); },
@@ -1448,7 +1499,7 @@ const ACT = {
   expert() { go("expert"); },
   toResult() { go("result"); },
   editAnswers() { S.qi = 0; go("q"); },
-  restart() { S.flags = {}; S.a = {}; S.qi = 0; go("start"); },
+  restart() { S.flags = {}; S.a = Object.assign({}, S.pre || {}); S.qi = 0; go("start"); },
   copy() {
     const el = document.getElementById("summary"), msg = document.getElementById("copymsg");
     const done = () => { msg.textContent = "복사했어요."; };
