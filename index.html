@@ -55,6 +55,14 @@ body {
 .brand { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .brand b { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.01em; }
 .brand span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.level { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.level span { margin-right: 2px; }
+.level button { appearance: none; background: var(--card); color: inherit; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 12px; min-height: 32px; font-size: 13px; cursor: pointer; }
+.level button[aria-pressed="true"] { border-color: var(--plate); color: var(--plate); font-weight: 600; }
+.level button:focus-visible { outline: 3px solid var(--plate); outline-offset: 2px; }
+.levelpick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.levelpick .opt { flex-direction: column; align-items: flex-start; gap: 4px; }
+.levelpick .opt small { color: var(--muted); font-size: 13px; }
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
 .stage { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .stage i { display: block; height: 6px; border-radius: 3px; background: var(--line); }
@@ -150,6 +158,8 @@ a { color: var(--plate); }
 .tag.synth { color: var(--plate); }
 .tag.app { color: var(--good); }
 .tag.hypo { color: var(--warn); border-style: dashed; background: var(--warn-tint); }
+.rv { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; width: fit-content; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--good); border: 1px solid var(--good); line-height: 1.5; }
+.rv::before { content: "✓"; }
 .basis, .kinds li { display: grid; grid-template-columns: 104px minmax(0, 1fr); column-gap: 12px; align-items: start; }
 .basis .tag, .kinds .tag { width: 100%; box-sizing: border-box; text-align: center; margin-top: 3px; }
 .basis p, .kinds li > span:not(.tag) { margin: 0; font-size: 15px; line-height: 1.6; }
@@ -184,10 +194,15 @@ footer { font-size: 12px; color: var(--muted); text-align: center; padding-top: 
 <div class="app">
   <header class="top">
     <div class="brand"><b id="brandName">운동 통증 점검</b><span id="brandTag">PAIN CHECK</span></div>
+    <div class="level" role="group" aria-label="설명 방식">
+      <span>설명</span>
+      <button data-act="level" data-v="easy" aria-pressed="true">쉬운 말</button>
+      <button data-act="level" data-v="pro" aria-pressed="false">의학 용어</button>
+    </div>
     <div class="stages" id="stages" aria-label="진행 단계"></div>
   </header>
   <main id="main" aria-live="polite"></main>
-  <footer>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 통증이 계속되거나 심해지면 의사나 물리치료사의 진료를 받으세요.</footer>
+  <footer>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 통증이 계속되거나 심해지면 정형외과나 재활의학과 진료를 받으세요.</footer>
 </div>
 
 <script>
@@ -547,7 +562,7 @@ const TOPICS = {
     extras() {
       return [
         card("허리를 굽히면 다치나요?", "weak",
-          "양쪽 근거가 다 있어요. 실험실에서 돼지 척추 디스크에 압박을 주며 굽혔다 펴기를 수천 번 반복하자 디스크가 조금씩 밀려나 16개 중 8개가 완전히 탈출했어요. 영국 산업안전청도 들 때 허리를 크게 굽히지 말고, 드는 도중 더 굽히지 말라고 권해요. 반면 사람을 직접 측정한 연구들에서는 허리를 더 굽혀 드는 사람에게 허리 통증이 더 생긴다는 근거가 없었어요(근거 품질 낮음, 12kg 이하로 든 연구). 무거운 데드리프트에서 어느 쪽이 맞는지는 아직 확실하지 않아요. 분명한 건 드는 무게와 횟수가 많을수록 허리 통증 위험이 늘었다는 점이에요.", "Tampier 2007, HSE 들기 지침, Saraceni 2020, Coenen 2014"),
+          "양쪽 근거가 다 있어요. 실험실에서 돼지 척추 디스크에 압박을 주며 굽혔다 펴기를 수천 번 반복하자 디스크가 조금씩 밀려나 16개 중 8개가 완전히 탈출했어요. 영국 산업안전청도 들 때 허리를 크게 굽히지 말고, 드는 도중 더 굽히지 말라고 권해요. 사람을 직접 본 연구들은 12kg 이하의 가벼운 물건을 드는 작업만 다뤄서, 무거운 데드리프트에 그대로 옮기기 어려워요. 무거운 데드리프트에서 허리를 굽히는 것이 부상 원인인지는 아직 연구로 확인되지 않았어요. 분명한 건 드는 무게와 횟수가 많을수록 허리 통증 위험이 늘었다는 점이에요.", "Tampier 2007, HSE 들기 지침, Saraceni 2020, Coenen 2014", "dl.card.bend"),
         card("허리 보호대를 차면 나을까요?", "mid",
           "허리 통증 치료 목적의 벨트나 코르셋은 영국 가이드라인이 권하지 않아요. 운동할 때 차는 리프팅 벨트가 통증에 어떤 영향을 주는지는 이번에 본 자료에 없어요.", "NICE NG59")];
     },
@@ -566,9 +581,24 @@ function finish(a, sc, patterns, picks, referDaily, referNerve = false) {
 }
 const KIND = { fact: "논문 확인", synth: "연구 종합 해석", app: "앱 제안", hypo: "검증 안 된 가설" };
 const tag = k => `<span class="tag ${k}">${KIND[k]}</span>`;
+/* 전문가 검토를 마친 항목 (2026-11-06, 검토 목록의 🟡 항목). "반영" = 검토 의견에 따라 고친 항목 */
+const REVIEWED = {
+  "bench.q.grip": "B5", "bench.q.elbow": "B4", "bench.q.load": "B3", "bench.adj.flex": "B6",
+  "ohp.q.arc": "O2", "ohp.q.ogrip": "O10", "ohp.q.shrug": "O5", "ohp.adj.front": "O8", "ohp.adj.grip": "O9", "ohp.adj.brace": "O6",
+  "dl.q.spike": "D3", "dl.adj.trap": "D6", "dl.card.bend": "D7 반영",
+  "sqk.flag.night": "K2", "sqk.adj.depth": "K7", "sqk.adj.lunge": "K8", "sqk.adj.hip": "K6", "sqk.adj.pain": "K5",
+  "sqb.q.wink": "Q2", "sqb.adj.depth": "Q3", "sqb.adj.front": "Q3",
+  "lat.adj.height": "L1", "lat.adj.thumb": "L2", "lat.adj.urow": "L3",
+  "elb.adj.wflex": "E4", "elb.pat.front": "E5",
+  "all.log": "C5", "all.expert": "C7 반영",
+};
+function rvb(key) {
+  const k = REVIEWED[key]; if (!k) return "";
+  return `<span class="rv" title="검토 목록 ${k.split(" ")[0]}">${k.endsWith("반영") ? "전문가 검토 의견 반영" : "전문가 검토 완료"}</span>`;
+}
 const basis = (k, text, src) => text ? `<div class="basis">${tag(k)}<p>${esc(text)}${src ? ` <span class="src">· ${esc(src)}</span>` : ""}</p></div>` : "";
-function card(title, ev, body, src) {
-  return `<div class="card"><div class="head"><h3>${esc(title)}</h3>${chip(ev)}</div><div class="tags">${tag("synth")}</div><p>${esc(body)}</p><p class="src">${esc(src)}</p></div>`;
+function card(title, ev, body, src, rvKey) {
+  return `<div class="card"><div class="head"><h3>${esc(title)}</h3>${chip(ev)}</div><div class="tags">${tag("synth")}${rvKey ? rvb(rvKey) : ""}</div><p>${esc(body)}</p><p class="src">${esc(src)}</p></div>`;
 }
 
 let T, RED_FLAGS, FLAG_LEVELS, QUESTIONS, PATTERNS, ADJUSTMENTS, SOURCES;
@@ -1096,10 +1126,69 @@ const BODY = [
     { n: "달리기", at: [["무릎·정강이", "run"]] } ] },
 ];
 
+/* ---------------- 설명 방식: 의학 용어 ---------------- */
+/* 쉬운 말 → 의학 용어. 긴 것부터 바꾸고, 바로 뒤 조사(이/가 등)는 새 용어 받침에 맞춰 고친다. */
+const GLOSS = [
+  ["무릎 앞쪽 통증 (슬개대퇴 통증)", "슬개대퇴 통증 증후군(PFPS)"],
+  ["무릎 바깥쪽 통증 (장경인대)", "장경인대 증후군(ITBS)"],
+  ["정강이 안쪽 통증 (정강이 부목)", "내측 경골 스트레스 증후군(MTSS)"],
+  ["슬개대퇴 통증", "슬개대퇴 통증 증후군"],
+  ["무릎힘줄 통증", "슬개건병증"],
+  ["무릎뼈 아래 힘줄", "슬개건"],
+  ["무릎뼈와 허벅지뼈", "슬개골과 대퇴골"],
+  ["무릎뼈 관절", "슬개대퇴관절"],
+  ["무릎뼈", "슬개골"],
+  ["쇄골 끝 골용해", "원위 쇄골 골용해증"],
+  ["쇄골 끝 관절", "견봉쇄골관절"],
+  ["쇄골 끝", "견봉쇄골관절"],
+  ["날개뼈", "견갑골"],
+  ["어깨 속 힘줄", "회전근개 힘줄"],
+  ["정강이 부목", "내측 경골 스트레스 증후군"],
+  ["피로골절", "스트레스 골절"],
+  ["넙다리뼈 목", "대퇴골 경부"],
+  ["손목뼈(주상골)", "주상골"],
+  ["손목 등쪽", "손목 배측"],
+  ["손등 가운데", "손목 배측 중앙"],
+  ["새끼손가락 쪽", "척측"],
+  ["엄지 쪽", "요측"],
+  ["손바닥 쪽", "수장측"],
+  ["이두근 힘줄", "원위 이두건"],
+  ["팔꿈치 바깥쪽 힘줄 통증", "외측 상과병증"],
+  ["팔꿈치 안쪽 힘줄 통증", "내측 상과병증"],
+  ["팔꿈치 바깥쪽 뼈", "외측 상과"],
+  ["팔꿈치 안쪽 뼈", "내측 상과"],
+  ["비특이적 허리 통증", "비특이적 요통"],
+  ["허리 통증", "요통"],
+  ["신경 뿌리", "신경근"],
+  ["골반 말림", "골반 후방경사(벗윙크)"],
+  ["발걸음 수", "케이던스"],
+  ["관절막 충돌", "관절낭 충돌"],
+  ["힘줄염", "건염"],
+];
+const GLOSS_RE = new RegExp("(" + GLOSS.map(g => g[0]).sort((a, b) => b.length - a.length)
+  .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")(으로|이에요|예요|이|가|을|를|은|는|과|와|로)?", "g");
+const GLOSS_MAP = Object.fromEntries(GLOSS);
+function josa(word, j) {
+  const core = word.replace(/\([^)]*\)$/, "").trim();
+  const c = core.charCodeAt(core.length - 1) - 0xAC00;
+  const hangul = c >= 0 && c < 11172, jong = hangul ? c % 28 : 0, b = jong !== 0, r = jong === 8;
+  return { "이": b ? "이" : "가", "가": b ? "이" : "가", "을": b ? "을" : "를", "를": b ? "을" : "를",
+    "은": b ? "은" : "는", "는": b ? "은" : "는", "과": b ? "과" : "와", "와": b ? "과" : "와",
+    "으로": b && !r ? "으로" : "로", "로": b && !r ? "으로" : "로", "이에요": b ? "이에요" : "예요", "예요": b ? "이에요" : "예요" }[j];
+}
+const toPro = text => text.replace(GLOSS_RE, (m, t, j) => { const w = GLOSS_MAP[t]; return w + (j ? josa(w, j) : ""); });
+function applyLevel(root) {
+  if (S.level !== "pro") return;
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
+  nodes.forEach(n => { if (n.parentElement && n.parentElement.closest("[data-raw]")) return; const t = toPro(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; });
+  root.querySelectorAll("textarea").forEach(el => { el.value = toPro(el.value); });
+}
+
 /* =========================================================
    STATE & STORAGE
    ========================================================= */
-const S = { screen: "start", topic: null, part: null, exi: null, area: null, agreed: false, flags: {}, qi: 0, a: {} };
+const S = { screen: "start", level: (() => { try { return localStorage.getItem("painLevel") === "pro" ? "pro" : "easy"; } catch (e) { return "easy"; } })(), topic: null, part: null, exi: null, area: null, agreed: false, flags: {}, qi: 0, a: {} };
 const LOG_KEY = "bench-shoulder-log";
 function loadLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || {}; } catch (e) { return {}; } }
 function saveLog(log) { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch (e) { /* 저장 불가 환경 */ } }
@@ -1155,6 +1244,14 @@ function viewStart() {
       <p class="lead">질문에 답하면 위험 신호를 먼저 거르고, 비슷한 통증 패턴과 다음 운동에서 바꿔볼 것, 그리고 전문가를 만나야 할 때를 알려드려요.</p>
     </div>
     <div class="stack">
+      <h3>설명은 어떻게 볼까요?</h3>
+      <div class="levelpick" role="group" aria-label="설명 방식">
+        <button class="opt" data-act="level" data-v="easy" aria-pressed="${S.level === "easy"}"><span>쉬운 말</span><small data-raw>날개뼈, 무릎뼈처럼 풀어서</small></button>
+        <button class="opt" data-act="level" data-v="pro" aria-pressed="${S.level === "pro"}"><span>의학 용어</span><small>견갑골, 슬개골처럼 논문 용어로</small></button>
+      </div>
+      <p class="subq">위쪽 "설명" 버튼으로 언제든 바꿀 수 있어요.</p>
+    </div>
+    <div class="stack">
       <h3>어떤 운동에서 아픈가요?</h3>
       ${viewPicker()}
     </div>
@@ -1170,7 +1267,7 @@ function viewStart() {
     </div>
     <div class="notice">
       <h3>시작하기 전에</h3>
-      <p>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 결과는 진단이 아니라 운동할 때 참고할 정보예요. 통증이 계속되거나 심해지면 의사나 물리치료사의 진료를 받으세요.</p>
+      <p>이 앱은 의료기기가 아니며 질병 여부를 판단하지 않습니다. 결과는 진단이 아니라 운동할 때 참고할 정보예요. 통증이 계속되거나 심해지면 정형외과나 재활의학과 진료를 받으세요.</p>
       <label class="check" for="agree"><input type="checkbox" id="agree" ${S.agreed ? "checked" : ""}> 위 내용을 확인했어요</label>
     </div>
     <div class="row">
@@ -1191,7 +1288,7 @@ function viewFlags() {
     <div class="card">
       ${RED_FLAGS.map(f => {
         const v = S.flags[f.id];
-        return `<div class="flag"><p>${esc(f.q)}</p>
+        return `<div class="flag"><p>${esc(f.q)}${rvb(S.topic + ".flag." + f.id) ? " " + rvb(S.topic + ".flag." + f.id) : ""}</p>
           <div class="seg" role="group" aria-label="${esc(f.q)}">
             <button class="yes" data-act="flag" data-id="${f.id}" data-v="1" aria-pressed="${v === true}">예</button>
             <button class="no" data-act="flag" data-id="${f.id}" data-v="0" aria-pressed="${v === false}">아니오</button>
@@ -1300,6 +1397,7 @@ function viewQuestion() {
       <h2>${esc(q.q)}</h2>
       ${q.hint ? `<p class="lead">${esc(q.hint)}</p>` : ""}
       ${basis("hypo", q.hypo)}
+      ${rvb(S.topic + ".q." + q.id)}
     </div>
     ${q.figure === "bar" ? `<div class="card">${barFigure(v)}<p class="src">파란 원판 사이의 검은 막대가 지금 고른 손 위치예요.</p></div>` : ""}
     ${q.figure === "arc" ? `<div class="card">${arcFigure(v)}<p class="src">앞에서 본 모습이에요. 노란 구간이 어깨 높이 전후(60~120°), 파란 구간이 끝까지 올리는 범위예요. 60~120° 기준은 Michener 2009을 따랐어요.</p></div>` : ""}
@@ -1326,6 +1424,7 @@ function viewResult() {
       <p><b>${esc(p.say)}</b></p>
       ${basis("fact", p.evText, p.src)}
       ${basis("hypo", p.hypo)}
+      ${rvb(S.topic + ".pat." + id)}
     </div>`;
   }).join("");
 
@@ -1342,6 +1441,7 @@ function viewResult() {
       ${basis("app", d.how)}
       ${basis("fact", d.fact, d.src)}
       ${basis("hypo", d.hypo)}
+      ${rvb(S.topic + ".adj." + id)}
       <div class="log">
         <div class="seg" role="group" aria-label="${esc(d.title)} 효과 기록">
           <button data-act="log" data-id="${id}" data-v="less" aria-pressed="${last && last.d === today && last.v === "less"}">덜 아팠어요</button>
@@ -1373,7 +1473,7 @@ function viewResult() {
         <li>${tag("app")}<span>연구를 바탕으로 앱이 권하는 실용적인 방법</span></li>
         <li>${tag("hypo")}<span>앱이 세운 것으로, 아직 연구로 확인되지 않은 부분</span></li>
       </ul>
-      <p class="src">답변으로 패턴과 조정을 고르는 규칙도 앱이 만든 것이라, 전체가 아직 전문가 검토 전이에요.</p>
+      <p class="src"><span class="rv">전문가 검토 완료</span> 표시가 붙은 항목은 전문가 검토를 마친 것이에요. 답변으로 패턴과 조정을 고르는 규칙 등 나머지는 아직 검토 전이에요.</p>
     </div>
     ${refer}
     ${pats}
@@ -1418,7 +1518,7 @@ function summaryText(r) {
 function viewExpert() {
   const r = analyse(S.a);
   const rows = [
-    ["조정을 2주 해도 그대로이거나 나빠짐", "정형외과·재활의학과 → 물리치료", "원인 확인과 재활 계획이 필요해요", r.referWorse],
+    ["조정을 2주 해도 그대로이거나 나빠짐", "정형외과·재활의학과", "원인 확인과 재활 계획이 필요해요", r.referWorse],
     ["운동 안 할 때도 아프거나 6주 넘게 지속", "정형외과·재활의학과", "오래된 통증은 진료가 먼저예요", r.referDaily || r.referLong || r.referNerve || r.referKnee || r.referElbow || r.referWrist],
     ["통증은 줄었는데 자세가 불안함", "트레이너", "폼 교정과 프로그램 조정", false],
   ];
@@ -1427,6 +1527,7 @@ function viewExpert() {
       <p class="eyebrow">5단계 · 전문가 연결</p>
       <h2>이럴 땐 전문가에게 확인받으세요</h2>
       <p class="lead">2주는 다 나을 때까지 기다리는 기간이 아니라, 한 번 확인받을 시점이에요. 물리치료 운동 프로그램은 보통 12주 정도 걸려요.</p>
+      ${rvb("all.expert")}
       ${basis("hypo", "\"2주\"는 앱이 정한 확인 시점이에요. 영국 1차 진료 요약은 운동치료로 좋아지는 데 6~12주를 보고, 그때도 나아지지 않으면 의뢰하라고 해요.")}
     </div>
     <div class="card tablewrap">
@@ -1443,7 +1544,7 @@ function viewExpert() {
       <p class="logmsg" id="copymsg"></p>
     </div>
     <div class="notice">
-      <h3>트레이너·물리치료 연결은 준비 중이에요</h3>
+      <h3>병원·트레이너 연결은 준비 중이에요</h3>
       <p>나중에는 이 요약을 들고 가까운 전문가와 바로 연결할 수 있게 만들 예정이에요.</p>
     </div>
     <div class="row">
@@ -1459,6 +1560,8 @@ function render() {
   document.getElementById("brandTag").textContent = T ? T.eyebrow : "PAIN CHECK";
   const v = { start: viewStart, flags: viewFlags, flagged: viewFlagged, q: viewQuestion, result: viewResult, expert: viewExpert }[S.screen];
   document.getElementById("main").innerHTML = v();
+  document.querySelectorAll('[data-act="level"]').forEach(el => el.setAttribute("aria-pressed", String(el.dataset.v === S.level)));
+  applyLevel(document.getElementById("main"));
 }
 function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
 
@@ -1466,6 +1569,7 @@ function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
    ACTIONS
    ========================================================= */
 const ACT = {
+  level(d) { S.level = d.v === "pro" ? "pro" : "easy"; try { localStorage.setItem("painLevel", S.level); } catch (e) { /* 저장 불가 */ } render(); },
   part(d) { if (S.part !== d.v) { S.part = d.v; S.exi = null; S.area = null; S.topic = null; T = null; } render(); },
   exer(d) { const ex = BODY.find(b => b.id === S.part).ex[+d.v]; S.exi = +d.v; S.area = null;
     if (ex.at.length === 1) pickArea(ex.at[0], 0); else { S.topic = null; T = null; render(); } },
