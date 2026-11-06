@@ -1,7 +1,6 @@
 /* 레터럴 레이즈·업라이트 로우 어깨 */
 TOPICS.lat = {
-  meta: { version: "7", updated: "2026-11-06" },
-  unclearBelow: 2,
+  meta: { version: "8", updated: "2026-11-06" },
   name: "레터럴 레이즈·업라이트 로우", brand: "레터럴 레이즈 어깨 점검", eyebrow: "LATERAL RAISE · SHOULDER",
   hero: "레터럴 레이즈·업라이트 로우에서 어깨가 아프다면",
   redFlags: TOPICS.ohp.redFlags, flagLevels: TOPICS.ohp.flagLevels, flagSrc: TOPICS.ohp.flagSrc,
@@ -34,8 +33,8 @@ TOPICS.lat = {
              fact: "건강한 남성 15명에서 엄지 위(풀 캔)는 엄지 아래(엠프티 캔)보다 어깨관절이 더 움직이는 정상적인 협응을 보였고, 엄지 아래는 날개뼈·쇄골이 더 올라가는 보상 패턴을 보였어요.", hypo: "2.27kg으로 건강한 사람을 잰 연구예요. 어깨 속 공간이나 통증은 재지 않았어요.", ev: "weak", src: "Robert-Lachaine 2015" },
     urow: { title: "업라이트 로우는 낮게, 아프면 빼기", how: "바를 몸에 붙여 팔꿈치로 당기고, 어깨 높이 아래에서 멈추세요. 그래도 아프면 당분간 빼고 레터럴 레이즈로 대신하세요.",
             fact: "바를 몸에 가깝게 두고, 통증이 있으면 높이를 줄이거나 하지 말라고 권했어요(실무 칼럼).", hypo: "레터럴 레이즈로 대신하라는 건 앱의 제안이에요.", ev: "weak", src: "Schoenfeld 2011" },
-    load: { title: "무게와 횟수 낮추기", how: "통증 없이 할 수 있는 무게로 2주 동안 해 보세요.",
-            fact: "무게를 낮추는 건 어깨 통증 보존적 관리의 기본 원칙이에요.", hypo: "\"2주\"라는 기간은 앱이 정한 값이에요.", ev: "mid", src: "BESS/BOA 2021" },
+    load: { title: "무게와 횟수 낮추기", how: "통증 없이 할 수 있는 무게로 해 보세요.",
+            fact: "무게를 낮추는 건 어깨 통증 보존적 관리의 기본 원칙이에요.", hypo: "얼마 동안 해야 하는지는 정해 두지 않았어요. 기록을 보며 판단하세요.", ev: "mid", src: "BESS/BOA 2021" },
     acc: COMMON_A.acc,
   },
   sources: [

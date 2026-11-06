@@ -7,23 +7,40 @@ const STAGES = ["위험 신호", "상황 질문", "점검할 것", "조정", "�
    ========================================================= */
 function has(a, q, v) { const x = a[q]; return Array.isArray(x) ? x.includes(v) : x === v; }
 function finish(a, sc, patterns, picks, referDaily, referNerve = false) {
-  const adjustments = picks.sort((x, y) => x[1] - y[1]).slice(0, 3).map(p => p[0]);
+  let adjustments = picks.sort((x, y) => x[1] - y[1]).slice(0, 3).map(p => p[0]);
   const referLong = has(a, "dur", "gt6");
   const referWorse = has(a, "trend", "worse");
-  /* C9: 답이 모호해 맨 앞 변수의 점수가 기준에 못 미치면 "좁히기 어려움"으로 표시한다. 기준(unclearBelow)은 주제 파일에 있다. */
-  const top = (sc && patterns.length && sc[patterns[0]]) || 0;
-  const unclear = !!(T && T.unclearBelow) && top < T.unclearBelow;
-  return { sc, patterns, adjustments, unclear, referFirst: referDaily || referLong || referWorse || referNerve, referDaily, referLong, referWorse, referNerve };
+  /* v8: 답변 중 어느 것도 뒷받침하지 않는 변수(점수 0)는 보여주지 않는다. 기본값으로 끼워 넣던 변수를 억지로 추천하지 않기 위해서다.
+     맨 앞 변수가 빠지면 "좁히기 어려움" 안내를 띄우고, 남는 변수가 하나도 없으면 조정도 권하지 않는다.
+     (v7의 C9 기준 점수 2·3점은 사용하지 않는다. 기록: docs/rule-inventory.md) */
+  const kept = patterns.filter(p => !(sc && Object.prototype.hasOwnProperty.call(sc, p) && sc[p] === 0));
+  const unclear = patterns.length > 0 && kept[0] !== patterns[0];
+  if (unclear && !kept.length) adjustments = [];
+  return { sc, patterns: kept, adjustments, unclear, referFirst: referDaily || referLong || referWorse || referNerve, referDaily, referLong, referWorse, referNerve };
 }
 const KIND = { fact: "논문 확인", synth: "연구 종합 해석", app: "앱 제안", hypo: "검증 안 된 가설" };
 const tag = k => `<span class="tag ${k}">${KIND[k]}</span>`;
-/* 전문가 검토 표시: content/reviews.js 의 기록에서 만든다. 검토 뒤 문구가 바뀐 항목(changedAfter)은 표시하지 않는다. */
-const REVIEW_AT = {};
-REVIEWS.forEach(r => { if (!r.changedAfter) r.keys.forEach(k => { REVIEW_AT[k] = r; }); });
+/* 전문가 검토 표시 (content/review-status.js). 실제 검토 기록이 있고 "검토 완료"일 때만, 분야와 범위를 함께 붙인다. */
 function rvb(key) {
-  const r = REVIEW_AT[key]; if (!r) return "";
-  const who = r.field ? ` · ${r.field}` : "";
-  return `<span class="rv" title="검토 목록 ${esc(r.item)}${esc(who)} · ${esc(r.date)}">${r.result === "고침" ? "전문가 검토 의견 반영" : "전문가 검토 완료"}</span>`;
+  const r = itemReview(key); if (!r) return "";
+  return `<span class="rv" title="${esc(r.date)} · 콘텐츠 버전 ${esc(r.version || "")}">검토 완료 · ${esc(r.field)} · ${esc(r.scope)}</span>`;
+}
+/* 주제별 검토 상태 (7개 영역). 전체가 완료된 것처럼 보이는 요약은 만들지 않는다. */
+function reviewPanel(topic) {
+  const rows = REVIEW_AREAS.map(a => ({ a, st: areaStatus(topic, a.id) }));
+  const counts = {}; rows.forEach(r => { counts[r.st.state] = (counts[r.st.state] || 0) + 1; });
+  const summary = counts.none === rows.length ? "7개 영역 모두 아직 검토 전이에요"
+    : Object.keys(REVIEW_STATES).filter(k => counts[k]).map(k => `${REVIEW_STATES[k]} ${counts[k]}`).join(" · ");
+  return `<details class="card review">
+    <summary><b>전문가 검토 상태</b><span class="src">${esc(summary)}</span></summary>
+    <ul class="rvlist">${rows.map(({ a, st }) => {
+      const r = st.record;
+      const extra = r && st.state === "done" ? `${r.field || ""}${r.qualification ? " " + r.qualification : ""} · ${r.scope || ""} · ${r.date}`
+        : r ? `${r.field || ""} · ${r.date}` : "";
+      return `<li><span>${esc(a.name)}</span><span class="st ${st.state}">${esc(REVIEW_STATES[st.state])}</span>${extra ? `<small>${esc(extra)}</small>` : ""}</li>`;
+    }).join("")}</ul>
+    <p class="src">영역마다 따로 표시해요. "검토 완료"도 적힌 분야와 범위만 검토됐다는 뜻이고, 나머지는 검토되지 않은 내용이에요.</p>
+  </details>`;
 }
 /* 근거 수준: 출처에 나온 연구마다 "연구 종류 · 대상"을 붙인다 (content/studies.js) */
 function levels(src) {
@@ -64,12 +81,44 @@ function applyLevel(root) {
 /* =========================================================
    STATE & STORAGE
    ========================================================= */
-const S = { screen: "start", level: (() => { try { return localStorage.getItem("painLevel") === "pro" ? "pro" : "easy"; } catch (e) { return "easy"; } })(), topic: null, part: null, exi: null, area: null, agreed: false, flags: {}, qi: 0, a: {} };
-const LOG_KEY = "bench-shoulder-log";
-function loadLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || {}; } catch (e) { return {}; } }
-function saveLog(log) { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch (e) { /* 저장 불가 환경 */ } }
-let LOG = loadLog();
-const logId = id => S.topic === "bench" ? id : `${S.topic}:${id}`;
+/* 저장은 이 기기의 브라우저(localStorage)에만 한다. 서버·외부 서비스로 보내지 않는다. 자세한 내용: docs/data-privacy.md
+   - 일반 설정   epc.settings  { schema, level, logNotice: { accepted, date } }
+   - 건강 관련 기록 epc.healthlog { schema, createdAt, updatedAt, entries: { "주제:조정": [{ d, v, savedAt }] } }
+   위험 신호·질문 답변은 저장하지 않는다(새로고침하면 사라짐). 보유 기간은 아직 정하지 않았다. */
+const STORE = { settings: "epc.settings", health: "epc.healthlog" };
+const LEGACY = { level: "painLevel", log: "bench-shoulder-log" };   // v7까지 쓰던 이름 → 처음 열 때 새 형식으로 옮기고 지운다
+const SCHEMA = 1;
+function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function removeKey(k) { try { localStorage.removeItem(k); } catch (e) { /* 저장 불가 환경 */ } }
+function loadSettings() {
+  const s = readJSON(STORE.settings);
+  if (s && s.schema === SCHEMA) return s;
+  const fresh = { schema: SCHEMA, level: "easy", logNotice: null };
+  let old = null; try { old = localStorage.getItem(LEGACY.level); } catch (e) { /* 저장 불가 환경 */ }
+  if (old !== null) { fresh.level = old === "pro" ? "pro" : "easy"; if (writeJSON(STORE.settings, fresh)) removeKey(LEGACY.level); }
+  return fresh;
+}
+function loadHealth() {
+  const h = readJSON(STORE.health);
+  if (h && h.schema === SCHEMA && h.entries) return h;
+  const old = readJSON(LEGACY.log);
+  if (!old || typeof old !== "object") return null;
+  const entries = {};   // v7까지 벤치는 주제 이름 없이 저장했다
+  Object.entries(old).forEach(([k, arr]) => { if (Array.isArray(arr) && arr.length) entries[k.includes(":") ? k : "bench:" + k] = arr.map(e => ({ d: e.d, v: e.v, savedAt: null })); });
+  const now = new Date().toISOString();
+  const moved = { schema: SCHEMA, createdAt: now, updatedAt: now, migratedFrom: LEGACY.log, entries };
+  if (writeJSON(STORE.health, moved)) removeKey(LEGACY.log);
+  return moved;
+}
+let SETTINGS = loadSettings();
+let HEALTH = loadHealth();
+const saveSettings = () => writeJSON(STORE.settings, SETTINGS);
+const entriesOf = () => (HEALTH && HEALTH.entries) || {};
+const healthCount = () => Object.values(entriesOf()).reduce((n, a) => n + a.length, 0);
+function clearHealth() { HEALTH = null; removeKey(STORE.health); removeKey(LEGACY.log); }
+const S = { screen: "start", level: SETTINGS.level === "pro" ? "pro" : "easy", topic: null, part: null, exi: null, area: null, agreed: false, flags: {}, qi: 0, a: {}, pendingLog: null };
+const logId = id => `${S.topic}:${id}`;
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const EV = { strong: ["strong", "근거 강함"], mid: ["mid", "근거 중간"], weak: ["weak", "근거 약함"] };
@@ -112,6 +161,17 @@ function pickArea(at, i) {
   setTopic(at[1]); render();
 }
 
+/* 시작 화면: 이 기기에 저장된 건강 기록 안내와 삭제 */
+function dataCard() {
+  const n = healthCount();
+  return `<div class="card">
+    <h3>이 기기에 저장된 기록</h3>
+    <p class="src">${n ? `조정 결과 기록 ${n}건이 이 기기의 브라우저에 저장돼 있어요${HEALTH && HEALTH.createdAt ? ` (처음 저장: ${esc(HEALTH.createdAt.slice(0, 10))})` : ""}.` : "저장된 조정 결과 기록이 없어요."} 답변 내용은 저장하지 않고, 어떤 기록도 서버로 보내지 않아요.</p>
+    ${n ? `<div class="row"><button class="btn ghost small" data-act="clearLog">내 기록 모두 지우기</button></div>` : ""}
+    <p class="logmsg" id="clearmsg">${S.cleared ? "기록을 지웠어요." : ""}</p>
+  </div>`;
+}
+
 function viewStart() {
   return `<section class="screen stack-lg">
     <div class="stack">
@@ -150,6 +210,8 @@ function viewStart() {
       <button class="btn" data-act="start" ${S.agreed && T ? "" : "disabled"}>점검 시작</button>
     </div>
     ${T ? `<p class="src">먼저 둘러보고 싶다면 <button class="linkbtn" data-act="sample">예시 답변으로 결과 미리보기</button></p>` : `<p class="src">위에서 운동을 고르면 시작할 수 있어요.</p>`}
+    ${T ? reviewPanel(S.topic) : ""}
+    ${dataCard()}
   </section>`;
 }
 
@@ -194,6 +256,10 @@ function viewFlagged() {
       <h3>"예"라고 답한 항목</h3>
       <ul class="sources" style="color:var(--ink);font-size:15px">${hits.map(f => `<li>${esc(f.q)}</li>`).join("")}</ul>
       <p class="note">이 경우엔 운동 조정이나 보조운동을 안내하지 않아요. 진료를 받은 뒤 운동 복귀는 담당 의료진과 상의하세요.</p>
+    </div>
+    <div class="card">
+      ${basis("hypo", "위험 신호 질문은 진료 지침을 바탕으로 만들었지만, \"119 / 오늘 / 며칠 안 / 빠른 시일 내\"처럼 언제 진료를 받을지 나눈 기준은 앱이 정한 것이고 아직 전문가 검토 전이에요. 증상이 심하거나 걱정되면 이 안내보다 더 빨리 진료를 받으세요.")}
+      <p class="src">위험 신호 및 진료 안내 검토 상태: <span class="st ${areaStatus(S.topic, "safety").state}">${esc(REVIEW_STATES[areaStatus(S.topic, "safety").state])}</span></p>
     </div>
     <div class="row">
       <button class="btn ghost" data-act="backFlags">답 고치기</button>
@@ -291,10 +357,11 @@ function viewQuestion() {
 function viewResult() {
   const r = analyse(S.a);
   const today = new Date().toISOString().slice(0, 10);
-  /* 결과는 질환명이 아니라 "답변과 관련 있는 운동 변수"로 보여준다 (기획서 6-3). 연구에서 쓰는 이름은 접어서 참고로만. */
+  /* 결과는 질환명이 아니라 "답변과 관련 있는 운동 변수"로 보여준다 (기획서 6-3).
+     v8: 질환명(term)과 진단 가능성 문장(internal)은 전문가 검토용 내부 데이터라 사용자 화면에 그리지 않는다. */
   const pats = r.patterns.map((id, i) => {
     const p = PATTERNS[id];
-    const eyebrow = r.unclear ? "참고로 볼 수 있는 것" : i === 0 ? "먼저 점검할 것" : "함께 점검할 것";
+    const eyebrow = r.unclear ? "답변과 관련 있는 것" : i === 0 ? "먼저 점검할 것" : "함께 점검할 것";
     return `<div class="card">
       <div class="head"><div class="stack" style="gap:2px"><span class="eyebrow">${eyebrow}</span><h3>${esc(p.title)}</h3></div>${chip(p.ev)}</div>
       <div class="tags">${tag("synth")}</div>
@@ -303,24 +370,24 @@ function viewResult() {
       <p><b>${esc(p.say)}</b></p>
       ${basis("fact", p.evText, p.src)}
       ${basis("hypo", p.hypo)}
-      ${p.term ? `<details class="more"><summary>연구에서 쓰는 이름</summary><p>${esc(p.term)}. 앱은 이 이름으로 판정하지 않아요. 논문을 찾아볼 때 참고하세요.</p></details>` : ""}
+      
       ${rvb(S.topic + ".pat." + id)}
     </div>`;
   }).join("");
 
   const unclear = r.unclear ? `<div class="notice">
-      <h3>답변만으로는 어떤 운동 변수가 관련 있는지 좁히기 어려워요</h3>
-      <p>"잘 모르겠음"이 많거나 답이 서로 다른 쪽을 가리킬 때 이렇게 보여요. 아래는 이 운동에서 흔히 점검하는 것이니 참고만 하세요. 다음 운동 때 아픈 위치와 순간을 살펴본 뒤 다시 해 보면 더 좁힐 수 있어요.</p>
-      ${basis("hypo", "어느 정도면 \"좁히기 어려움\"으로 볼지는 앱이 정한 기준이에요 (검토 목록 C9).")}
+      <h3>현재 답변만으로는 우선적으로 점검할 변수를 좁히기 어려워요</h3>
+      <p>${r.patterns.length ? "그래서 먼저 점검할 것을 정하지 않았어요. 아래는 답변과 관련 있는 것만 보여드려요." : "그래서 특정 운동 변수나 조정을 권하지 않아요."} 다음 운동 때 어디가, 어느 순간에 아픈지 살펴본 뒤 다시 해 보세요. 통증이 계속되면 정형외과나 재활의학과에서 확인받으세요.</p>
+      ${basis("hypo", "어떤 답변도 뒷받침하지 않는 변수는 보여주지 않는 방식은 앱이 정한 것이고, 아직 전문가 검토 전이에요.")}
     </div>` : "";
 
   const adj = r.adjustments.map(id => {
     const d = ADJUSTMENTS[id];
-    const entries = LOG[logId(id)] || [];
+    const entries = entriesOf()[logId(id)] || [];
     const last = entries[entries.length - 1];
     const msg = !last ? "다음 운동 후에 기록해 주세요." :
       last.v === "less" ? `${last.d}: 덜 아팠어요. 이 조정이 나에게 맞는 단서예요.` :
-      last.v === "same" ? `${last.d}: 같았어요. 다른 조정과 함께 2주는 지켜보세요.` :
+      last.v === "same" ? `${last.d}: 같았어요. 다음 운동에서도 기록해 보세요.` :
       `${last.d}: 더 아팠어요. 이 조정은 멈추고, 계속 아프면 전문가에게 확인받으세요.`;
     return `<div class="adj">
       <div class="head"><h3>${esc(d.title)}</h3>${chip(d.ev)}</div>
@@ -335,6 +402,11 @@ function viewResult() {
           <button data-act="log" data-id="${id}" data-v="more" aria-pressed="${last && last.d === today && last.v === "more"}">더 아팠어요</button>
         </div>
         <p class="logmsg">${esc(msg)}</p>
+        ${S.pendingLog && S.pendingLog.id === id ? `<div class="notice consent">
+          <h3>기록하기 전에 알려드려요</h3>
+          <p>이 기록(조정 이름, 날짜, 덜·같음·더 아팠는지)은 운동 중 통증에 관한 정보예요. 이 기기의 브라우저에만 저장되고 서버나 다른 곳으로 보내지 않아요. 같은 기기를 쓰는 사람은 볼 수 있어요. 보관 기간은 정해 두지 않았고, 시작 화면이나 이 화면에서 언제든 지울 수 있어요.</p>
+          <div class="row"><button class="btn small" data-act="logAccept">알겠어요, 저장할게요</button><button class="btn ghost small" data-act="logDecline">저장하지 않기</button></div>
+        </div>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -344,7 +416,7 @@ function viewResult() {
       <p>${[r.referHip && "고관절이 걸리거나 잠기는 느낌, 또는 엉덩이 바깥쪽 통증이 있고", r.referInstab && "어깨가 빠질 것 같은 느낌이 있고", r.referWrist && "손목 옆쪽이나 손바닥 쪽이 아프고", r.referElbow && "팔꿈치 앞쪽이 아프고", r.referKnee && "무릎이 붓거나 안·바깥쪽이 아프고", r.referNerve && "통증이나 저림이 무릎 아래로 내려가고", r.referDaily && "운동하지 않을 때도 아프고", r.referLong && "6주 넘게 계속되고", r.referWorse && "점점 나빠지고"].filter(Boolean).join(", ")} 있어요. 아래 조정은 참고만 하고, 정형외과나 재활의학과에서 먼저 확인받으세요.</p>
     </div>` : "";
 
-  const logCount = Object.keys(LOG).length;
+  const logCount = healthCount();
   return `<section class="screen stack-lg">
     <div class="stack">
       <p class="eyebrow">3단계 · 점검할 것</p>
@@ -360,8 +432,9 @@ function viewResult() {
         <li>${tag("app")}<span>연구를 바탕으로 앱이 권하는 실용적인 방법</span></li>
         <li>${tag("hypo")}<span>앱이 세운 것으로, 아직 연구로 확인되지 않은 부분</span></li>
       </ul>
-      <p class="src"><span class="rv">전문가 검토 완료</span> 표시는 그 항목만 검토를 마쳤다는 뜻이에요. 답변으로 점검할 것과 조정을 고르는 규칙 등 나머지는 아직 검토 전이에요.</p>
+      <p class="src">전문가 검토 상태는 아래에서 영역별로 확인할 수 있어요.</p>
     </div>
+    ${reviewPanel(S.topic)}
     ${refer}
     ${unclear}
     ${pats}
@@ -373,8 +446,12 @@ function viewResult() {
       <p class="lead">운동이 끝나면 각 조정 아래에 기록하세요. 내 운동을 돌아보기 위한 기록이고, 조정의 효과를 증명하는 건 아니에요.</p>
     </div>
     <div class="card">${adj}
-      <p class="src">기록은 이 기기의 브라우저에만 저장되고 어디로도 보내지 않아요.${logCount ? ` <button class="linkbtn" data-act="clearLog">내 기록 모두 지우기</button>` : ""}</p>
-      <p class="logmsg" id="clearmsg"></p>
+      <p class="src">기록은 처음 저장할 때 한 번 안내한 뒤, 이 기기의 브라우저에만 저장돼요. 어디로도 보내지 않아요.${logCount ? ` <button class="linkbtn" data-act="clearLog">내 기록 모두 지우기</button>` : ""}</p>
+      <p class="logmsg" id="clearmsg">${S.cleared ? "기록을 지웠어요." : ""}</p>
+    </div>` : r.unclear && !r.referFirst ? `<div class="stack">
+      <p class="eyebrow">4단계 · 다음 운동에서 해볼 조정</p>
+      <h2>이번 답변으로는 조정을 권하지 않아요</h2>
+      <p class="lead">어디가, 언제 아픈지 더 알게 되면 다시 해 보세요. 계속 아프면 아래 "전문가에게 확인받을 때 보기"를 확인하세요.</p>
     </div>` : `<div class="stack">
       <p class="eyebrow">4단계 · 다음 운동에서 해볼 조정</p>
       <h2>이 경우엔 운동 조정보다 진료가 먼저예요</h2>
@@ -399,10 +476,10 @@ function viewResult() {
 
 function summaryText(r) {
   const lines = [`[${T.brand} 결과 요약]`, ...T.summary(S.a), `관련 운동 변수: ${r.patterns.map(p => PATTERNS[p].title).join(", ")}`];
-  const logged = Object.keys(ADJUSTMENTS).filter(k => (LOG[logId(k)] || []).length);
+  const logged = Object.keys(ADJUSTMENTS).filter(k => (entriesOf()[logId(k)] || []).length);
   if (logged.length) {
     lines.push("조정 기록:");
-    logged.forEach(k => { const arr = LOG[logId(k)]; const l = arr[arr.length - 1]; lines.push(`- ${ADJUSTMENTS[k].title}: ${{ less: "덜 아팠음", same: "같았음", more: "더 아팠음" }[l.v]} (${l.d})`); });
+    logged.forEach(k => { const arr = entriesOf()[logId(k)]; const l = arr[arr.length - 1]; lines.push(`- ${ADJUSTMENTS[k].title}: ${{ less: "덜 아팠음", same: "같았음", more: "더 아팠음" }[l.v]} (${l.d})`); });
   }
   return lines.join("\n");
 }
@@ -410,7 +487,7 @@ function summaryText(r) {
 function viewExpert() {
   const r = analyse(S.a);
   const rows = [
-    ["조정을 2주 해도 그대로이거나 나빠짐", "정형외과·재활의학과", "원인을 확인받을 시점이에요", r.referWorse],
+    ["조정을 해 봐도 나아지지 않거나 나빠짐", "정형외과·재활의학과", "원인을 확인받을 시점이에요", r.referWorse],
     ["운동 안 할 때도 아프거나 6주 넘게 지속", "정형외과·재활의학과", "오래된 통증은 진료가 먼저예요", r.referDaily || r.referLong || r.referNerve || r.referKnee || r.referElbow || r.referWrist || r.referInstab || r.referHip],
     ["통증은 줄었는데 자세가 불안함", "트레이너", "폼 교정과 프로그램 조정", false],
   ];
@@ -418,9 +495,8 @@ function viewExpert() {
     <div class="stack">
       <p class="eyebrow">5단계 · 전문가 연결</p>
       <h2>이럴 땐 전문가에게 확인받으세요</h2>
-      <p class="lead">2주는 다 나을 때까지 기다리는 기간이 아니라, 한 번 확인받을 시점이에요.</p>
+      <p class="lead">얼마나 지켜본 뒤 확인받을지는 앱이 정해 두지 않았어요. 나아지지 않거나 걱정되면 기다리지 말고 확인받으세요.</p>
       ${rvb("all.expert")}
-      ${basis("hypo", "\"2주\"는 앱이 정한 확인 시점이에요. 영국 1차 진료 요약은 운동으로 좋아지는 데 6~12주를 보고, 그때도 나아지지 않으면 의뢰하라고 해요.")}
     </div>
     <div class="card tablewrap">
       <table>
@@ -456,13 +532,23 @@ function render() {
   document.querySelectorAll('[data-act="level"]').forEach(el => el.setAttribute("aria-pressed", String(el.dataset.v === S.level)));
   applyLevel(document.getElementById("main"));
 }
-function go(screen) { S.screen = screen; render(); window.scrollTo(0, 0); }
+function go(screen) { S.screen = screen; S.cleared = false; render(); window.scrollTo(0, 0); }
+function stay() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+function writeLog(id, v) {
+  const now = new Date().toISOString(), today = now.slice(0, 10);
+  if (!HEALTH) HEALTH = { schema: SCHEMA, createdAt: now, updatedAt: now, entries: {} };
+  const key = logId(id);
+  const arr = (HEALTH.entries[key] || []).filter(e => e.d !== today);
+  arr.push({ d: today, v, savedAt: now });
+  HEALTH.entries[key] = arr; HEALTH.updatedAt = now;
+  writeJSON(STORE.health, HEALTH);
+}
 
 /* =========================================================
    ACTIONS
    ========================================================= */
 const ACT = {
-  level(d) { S.level = d.v === "pro" ? "pro" : "easy"; try { localStorage.setItem("painLevel", S.level); } catch (e) { /* 저장 불가 */ } render(); },
+  level(d) { S.level = d.v === "pro" ? "pro" : "easy"; SETTINGS.level = S.level; saveSettings(); render(); },
   part(d) { if (S.part !== d.v) { S.part = d.v; S.exi = null; S.area = null; S.topic = null; T = null; } render(); },
   exer(d) { const ex = BODY.find(b => b.id === S.part).ex[+d.v]; S.exi = +d.v; S.area = null;
     if (ex.at.length === 1) pickArea(ex.at[0], 0); else { S.topic = null; T = null; render(); } },
@@ -485,15 +571,18 @@ const ACT = {
   },
   prev() { if (S.qi === 0) go("flags"); else { S.qi--; go("q"); } },
   next() { if (S.qi < QUESTIONS.length - 1) { S.qi++; go("q"); } else go("result"); },
+  /* 결과 기록: 처음 저장하기 전에 안내를 보여주고, 사용자가 확인한 뒤에만 저장한다. */
   log(d) {
-    const today = new Date().toISOString().slice(0, 10);
-    const key = logId(d.id);
-    const arr = (LOG[key] || []).filter(e => e.d !== today);
-    arr.push({ d: today, v: d.v });
-    LOG[key] = arr; saveLog(LOG);
-    const y = window.scrollY; render(); window.scrollTo(0, y);
+    S.cleared = false;
+    if (!(SETTINGS.logNotice && SETTINGS.logNotice.accepted)) { S.pendingLog = { id: d.id, v: d.v }; stay(); return; }
+    writeLog(d.id, d.v); stay();
   },
-  clearLog() { LOG = {}; try { localStorage.removeItem(LOG_KEY); } catch (e) { /* 저장 불가 */ } const y = window.scrollY; render(); window.scrollTo(0, y); },
+  logAccept() {
+    SETTINGS.logNotice = { accepted: true, date: new Date().toISOString() }; saveSettings();
+    const p = S.pendingLog; S.pendingLog = null; if (p) writeLog(p.id, p.v); stay();
+  },
+  logDecline() { S.pendingLog = null; stay(); },
+  clearLog() { clearHealth(); S.pendingLog = null; S.cleared = true; stay(); },
   expert() { go("expert"); },
   toResult() { go("result"); },
   editAnswers() { S.qi = 0; go("q"); },

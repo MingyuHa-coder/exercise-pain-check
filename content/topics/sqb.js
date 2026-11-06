@@ -1,6 +1,6 @@
 /* 스쿼트 허리 */
 TOPICS.sqb = {
-  meta: { version: "7", updated: "2026-11-06" },
+  meta: { version: "8", updated: "2026-11-06" },
   name: "스쿼트 (허리)", brand: "스쿼트 허리 점검", eyebrow: "SQUAT · LOW BACK",
   hero: "스쿼트할 때 허리가 아프다면",
   redFlags: TOPICS.dl.redFlags, flagLevels: TOPICS.dl.flagLevels, flagSrc: TOPICS.dl.flagSrc,
@@ -21,7 +21,7 @@ TOPICS.sqb = {
   ],
   patterns: TOPICS.dl.patterns,
   adjustments: {
-    load: { ...TOPICS.dl.adjustments.load, how: "통증이 늘지 않는 무게로 낮추고 2주 동안 해 보세요." },
+    load: { ...TOPICS.dl.adjustments.load, how: "통증이 늘지 않는 무게로 낮춰서 해 보세요." },
     ramp: { ...TOPICS.dl.adjustments.ramp, fact: "가이드라인은 평소 활동을 이어가길 권해요. 데드리프트로는 10kg부터 통증에 맞춰 올린 8주 훈련이 저부하 운동과 비슷하게 통증을 줄였어요.",
             hypo: "스쿼트로 같은 방법을 시험한 연구는 없어요. 데드리프트 연구를 스쿼트에 옮긴 건 앱의 추론이에요.", ev: "weak" },
     depth: { title: "허리가 둥글어지기 전까지만 앉기", how: "골반이 말리기 시작하는 깊이 바로 위까지만 앉으세요. 박스나 벤치를 놓고 그 높이까지만 앉는 것도 방법이에요.",
