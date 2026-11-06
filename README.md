@@ -48,6 +48,7 @@
 | `docs/squat-back-plan.md` | 스쿼트 허리 기획서와 근거 논문 목록 |
 | `docs/evidence-principles.md` | 근거 표시 원칙 |
 | `docs/expert-review-pending.md` | 전문가 검토가 필요한 자체 설계 목록 |
+| `docs/expert-review-request-by-role.md` | 의사·물리치료사·스포츠과학 전문가별 검토 요청서 |
 | `docs/lateral-raise-plan.md` | 레터럴 레이즈·업라이트 로우 기획서 |
 | `docs/elbow-plan.md` | 컬·풀업 팔꿈치 기획서 |
 | `docs/wrist-plan.md` | 딥스·벤치·푸시업 손목 기획서 |
