@@ -18,6 +18,7 @@
 - 딥스·푸시업 어깨 통증
 - 풀업·랫풀다운 어깨 통증
 - 스쿼트·런지·레그프레스 고관절 통증
+- 바벨 로우 허리 통증
 
 ## 이 앱이 다른 점: 근거를 네 가지로 나눠 보여줍니다
 
@@ -54,6 +55,7 @@
 | `docs/dips-pushup-shoulder-plan.md` | 딥스·푸시업 어깨 기획서 |
 | `docs/pullup-shoulder-plan.md` | 풀업·랫풀다운 어깨 기획서 |
 | `docs/hip-plan.md` | 스쿼트·런지 고관절 기획서 |
+| `docs/row-back-plan.md` | 바벨 로우 허리 기획서 |
 
 ## 앞으로
 
