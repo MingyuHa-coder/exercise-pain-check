@@ -16,6 +16,7 @@
 - 딥스·벤치·푸시업 손목 통증
 - 달리기 무릎·정강이 통증
 - 딥스·푸시업 어깨 통증
+- 풀업·랫풀다운 어깨 통증
 
 ## 이 앱이 다른 점: 근거를 네 가지로 나눠 보여줍니다
 
@@ -50,6 +51,7 @@
 | `docs/wrist-plan.md` | 딥스·벤치·푸시업 손목 기획서 |
 | `docs/running-plan.md` | 달리기 무릎·정강이 기획서 |
 | `docs/dips-pushup-shoulder-plan.md` | 딥스·푸시업 어깨 기획서 |
+| `docs/pullup-shoulder-plan.md` | 풀업·랫풀다운 어깨 기획서 |
 
 ## 앞으로
 
