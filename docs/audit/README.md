@@ -86,11 +86,16 @@ node tools/audit/test-audit.js                   # 추적 시스템 자체의 �
 
 | 무엇 | 어디에 | 예 |
 | --- | --- | --- |
-| 1. 논문이 **존재**하는지 | 신규 목록 `existence_checked`(Y/N), `existence_source` | DOI로 서지 확인 |
+| 1. 논문이 **존재**하는지 (서지 정보만. 내용 검증 아님) | 신규 목록 `existence_checked`(Y/N), `existence_source`(Y이면 필수) | DOI로 서지 확인 |
 | 2. 논문이 **무엇을 보고**했는지 | 행렬 `finding_type`(E0~E4·E9), `finding_text` | 아래 표 |
 | 3. 그 결과가 **앱 주장과 어떤 관계**인지 | 행렬 `relation_to_app`, `relation_note` | 아래 표 |
 
-존재만 확인한 연구(E0)로는 지지·반박·간접 근거를 기록할 수 없다(검증이 막는다). 관계를 적으면 대상(`location_id` 또는 `rule_ids`)과 보고 내용(`finding_text`)도 있어야 한다.
+**서지 존재 확인과 내용 검증은 별개다.** `existence_checked = Y`는 DOI·PubMed 등에서 그 논문이 실제로 있고 서지 정보가 맞다는 뜻일 뿐, 논문 전문을 읽고 내용을 검증했다는 뜻이 아니다. 내용은 행렬의 `finding_type`·`finding_text`에, 앱 주장과의 관계는 `relation_to_app`에 따로 적는다.
+
+- 서지 정보를 아직 확인하지 못한 신규 연구(`existence_checked`가 N 또는 빈칸)도 **조사 후보로 등록하고** 앱 주장·규칙에 연결할 수 있다. 다만 관계는 `undetermined`(판단 보류) 또는 `not_applicable`만 쓸 수 있고, 근거 판단을 확정하는 `support_direct`·`contradict`·`indirect`는 검증이 막는다.
+- `existence_checked = Y`이면 확인한 곳(`existence_source`)을 반드시 적는다. 비어 있으면 검증이 막는다.
+- 앱이 이미 인용한 연구는 신규 목록에 등록하지 않으므로 이 규칙과 관계없이 지금처럼 연결한다.
+- 존재만 확인한 연구(E0)로는 지지·반박·간접 근거를 기록할 수 없다(검증이 막는다). 관계를 적으면 대상(`location_id` 또는 `rule_ids`)과 보고 내용(`finding_text`)도 있어야 한다.
 
 ### 앱과의 관계 (`relation_to_app`)
 

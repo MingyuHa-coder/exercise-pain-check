@@ -9,6 +9,8 @@ Work가 작성한 파일을 이 폴더에 넣는다. 둘 다 없어도 되고, �
 
 - 앱이 이미 인용한 연구는 근거 연결표(`bench-evidence-links.csv`)의 `study_id`를 그대로 쓴다. 바꾸지 않는다.
 - 새로 찾은 연구는 먼저 `<주제>-new-studies.csv`에 `new:소문자-숫자-하이픈` ID로 등록하고, 행렬에서는 그 ID를 쓴다. DOI·PMID·제목 중 하나는 반드시 적는다.
+- `existence_checked = Y`는 **서지 정보(논문이 실제로 있는지)만 확인했다는 뜻**이고, 논문 전문의 내용을 검증했다는 뜻이 아니다. Y이면 확인한 곳(`existence_source`)을 반드시 적는다.
+- 서지 확인 전(N 또는 빈칸)인 신규 연구도 조사 후보로 등록·연결할 수 있지만, 관계는 `undetermined`·`not_applicable`만 쓸 수 있다. `support_direct`·`contradict`·`indirect`는 서지를 확인한 뒤에만 쓴다.
 - 칸의 뜻, 결과 종류(E0~E4·E9), 앱과의 관계 코드는 [../README.md](../README.md)에 있다.
 
 넣은 뒤:

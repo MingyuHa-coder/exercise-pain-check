@@ -4,6 +4,8 @@
    - <work>/<topic>-new-studies.csv     : Work가 새로 찾은 연구 목록 (DOI·PMID·제목으로 식별)
    세 가지를 섞지 않는다:
      1) 논문이 존재하는지        → new-studies.csv 의 existence_checked / existence_source
+        (서지 정보 확인일 뿐, 논문 전문의 내용을 검증했다는 뜻이 아니다.
+         Y가 아닌 신규 연구는 조사 후보로 등록·연결할 수 있지만 지지·반박·간접 근거로는 기록할 수 없다)
      2) 논문이 무엇을 보고했는지  → evidence-matrix.csv 의 finding_type(E0~E4·E9), finding_text
      3) 그 결과가 앱 주장과 어떤 관계인지 → evidence-matrix.csv 의 relation_to_app (대상: location_id·rule_ids)
    이 파일들은 docs/audit 자료에만 반영된다. 앱(content/·js/)의 근거 표시·문구·검토 상태는 바뀌지 않는다.
@@ -12,6 +14,8 @@ const fs = require("fs");
 const path = require("path");
 
 const FINDING_TYPES = { E0: "논문 존재·서지 확인만", E1: "측정·생체역학 결과 보고", E2: "조정·치료의 통증·기능 효과 보고", E3: "요인과 증상·소견의 연관 보고", E4: "지침·합의 권고", E9: "기타·분류 어려움" };
+/* 근거 판단을 확정하는 관계: 서지 존재가 확인된(existence_checked = Y) 신규 연구에만 쓸 수 있다 */
+const CONFIRMING_RELATIONS = ["support_direct", "contradict", "indirect"];
 const RELATIONS = { support_direct: "직접 지지", contradict: "반박", indirect: "간접 근거", not_applicable: "적용 어려움", undetermined: "판단 보류" };
 const NEW_PREFIX = "new:";
 const MATRIX_COLS = ["matrix_row_id", "study_id", "citation", "location_id", "rule_ids", "finding_type", "population", "study_design", "finding_text", "relation_to_app", "relation_note", "work_grade", "checked_by", "checked_date", "notes"];
@@ -58,6 +62,7 @@ function validateWork(work, ctx) {
       if (r.doi && !/^10\.\d{4,9}\/\S+$/.test(normDoi(r.doi))) bad.push(`${at}: DOI 형식 오류 (${r.doi})`);
       if (r.pmid && !/^\d{1,9}$/.test(r.pmid)) bad.push(`${at}: PMID는 숫자만 (${r.pmid})`);
       if (r.existence_checked && !["Y", "N"].includes(r.existence_checked)) bad.push(`${at}: existence_checked는 Y 또는 N`);
+      if (r.existence_checked === "Y" && !r.existence_source) bad.push(`${at}: existence_checked가 Y이면 존재를 확인한 곳(existence_source)을 적어야 함`);
       const d = normDoi(r.doi);
       if (d && ctx.appDois.has(d)) bad.push(`${at}: 이 DOI는 앱이 이미 인용한 연구(${ctx.appDois.get(d)})임 → 기존 ID로 적을 것`);
       if (d && seenDoi.has(d)) bad.push(`${at}: DOI가 ${seenDoi.get(d)}와 같음`);
@@ -84,7 +89,11 @@ function validateWork(work, ctx) {
       seenRow.add(r.matrix_row_id);
       const sid = r.study_id;
       if (!sid) bad.push(`${at}: study_id 없음`);
-      else if (sid.startsWith(NEW_PREFIX)) { if (!newIds.has(sid)) bad.push(`${at}: 신규 연구 ${sid}가 신규 연구 목록(${path.basename(work.newPath)})에 없음`); }
+      else if (sid.startsWith(NEW_PREFIX)) {
+        if (!newIds.has(sid)) bad.push(`${at}: 신규 연구 ${sid}가 신규 연구 목록(${path.basename(work.newPath)})에 없음`);
+        else if (newIds.get(sid).existence_checked !== "Y" && CONFIRMING_RELATIONS.includes(r.relation_to_app))
+          bad.push(`${at}: 신규 연구 ${sid}는 서지 존재 확인 전(existence_checked=${newIds.get(sid).existence_checked || "빈칸"})이라 ${r.relation_to_app}(${RELATIONS[r.relation_to_app]})로 기록할 수 없음 → 존재를 확인해 Y와 existence_source를 적거나, 관계를 undetermined로 둘 것`);
+      }
       else if (!ctx.appStudyIds.has(sid)) bad.push(`${at}: ${sid}는 앱이 인용한 연구 ID가 아님 (새로 찾은 연구면 "new:" ID로 신규 목록에 등록)`);
       if (r.location_id && !ctx.locIds.has(r.location_id)) bad.push(`${at}: 위치 ID ${r.location_id} 없음`);
       (r.rule_ids || "").split(/\s+/).filter(Boolean).forEach(x => { if (!ctx.ruleIds.has(x)) bad.push(`${at}: 규칙 ID ${x} 없음`); });
@@ -110,4 +119,4 @@ function validateWork(work, ctx) {
   return { errors, notes, passes, newIds };
 }
 
-module.exports = { loadWork, validateWork, parseCsv, FINDING_TYPES, RELATIONS, NEW_PREFIX, MATRIX_COLS, NEW_COLS, normDoi };
+module.exports = { loadWork, validateWork, parseCsv, FINDING_TYPES, RELATIONS, CONFIRMING_RELATIONS, NEW_PREFIX, MATRIX_COLS, NEW_COLS, normDoi };

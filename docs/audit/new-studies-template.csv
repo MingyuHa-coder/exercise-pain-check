@@ -1,2 +1,2 @@
 new_study_id,doi,pmid,title,first_author,year,journal,existence_checked,existence_source,added_by,added_date,notes
-(예시 — 지우고 사용) new:kim-2025-bench-grip,(10.xxxx/xxxx — 있으면),(숫자 — 있으면),(논문 제목),(제1저자 성),(연도),(학술지),(Y / N),(DOI·PubMed 등 존재를 확인한 곳),(Work),(YYYY-MM-DD),
+(예시 — 지우고 사용) new:kim-2025-bench-grip,(10.xxxx/xxxx — 있으면),(숫자 — 있으면),(논문 제목),(제1저자 성),(연도),(학술지),(Y / N — 서지 정보만 확인. 내용 검증 아님),(DOI·PubMed 등 존재를 확인한 곳 — Y이면 필수),(Work),(YYYY-MM-DD),

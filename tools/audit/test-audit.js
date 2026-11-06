@@ -79,7 +79,7 @@ const baseHash = appHash(L.ROOT);
 test("A. 정상: 신규 연구 + 앱 인용 연구가 함께 있는 Work 자료는 통과", () => {
   const root = withWork([NS(), NS({ new_study_id: "new:fixture-b-2098", doi: "", pmid: "99999999", title: "시험용 가상 연구 B", first_author: "Other", year: "2098", existence_checked: "N" })],
     [MR(), MR({ matrix_row_id: "W2", study_id: "nevalainen-2016", location_id: "bench.adj.load.fact", finding_type: "E0", finding_text: "", relation_to_app: "undetermined" }),
-     MR({ matrix_row_id: "W3", study_id: "new:fixture-b-2098", location_id: "", rule_ids: "bench.P.grip bench.S.acj.grip=g2", finding_type: "E3", finding_text: "시험용", relation_to_app: "contradict" })]);
+     MR({ matrix_row_id: "W3", study_id: "new:fixture-b-2098", location_id: "", rule_ids: "bench.P.grip bench.S.acj.grip=g2", finding_type: "E3", finding_text: "시험용", relation_to_app: "undetermined" })]);
   const before = appHash(root);
   const d = rebuild(root);
   const r = verify(root);
@@ -89,7 +89,7 @@ test("A. 정상: 신규 연구 + 앱 인용 연구가 함께 있는 Work 자료�
   const a = nl.find(x => x.new_study_id === "new:fixture-a-2099");
   if (!a || a.target_location_id !== "bench.adj.grip.fact" || a.relation_label !== "간접 근거" || !a.target_claim_text) return "신규 연구 A 연결이 자료에 없음: " + JSON.stringify(a);
   const b = nl.find(x => x.new_study_id === "new:fixture-b-2098");
-  if (!b || b.relation_label !== "반박" || b.target_rule_ids !== "bench.P.grip bench.S.acj.grip=g2") return "신규 연구 B 규칙 연결이 없음";
+  if (!b || b.relation_label !== "판단 보류" || b.target_rule_ids !== "bench.P.grip bench.S.acj.grip=g2") return "신규 연구 B(존재 확인 전) 조사 후보 연결이 없음";
   if (!r.notes.some(x => x.includes("존재(서지) 확인이 Y가 아닌 신규 연구 1개"))) return "존재 확인 N이 알림에 없음";
   const link = d.links.find(x => x.study_id === "nevalainen-2016" && x.location_id === "bench.adj.load.fact");
   if (link.work_finding_type !== "E0" || link.work_grade !== "") return "앱 인용 연구 Work 칸이 이상함";
@@ -116,6 +116,27 @@ expectBlocked("PMID에 숫자 아닌 값", [NS({ pmid: "PMID12a" })], null, "PMI
 expectBlocked("신규 ID 중복", [NS(), NS({ doi: "10.9999/other" })], null, "ID 중복");
 expectBlocked("같은 DOI를 두 신규 ID로 등록", [NS(), NS({ new_study_id: "new:fixture-c" })], null, "DOI가");
 expectBlocked("existence_checked가 Y/N이 아님", [NS({ existence_checked: "yes" })], null, "existence_checked");
+/* 서지 존재 확인 전(Y가 아님) 신규 연구: 조사 후보 연결은 되지만 근거 판단을 확정하는 관계는 막힘 */
+["support_direct", "contradict", "indirect"].forEach(rel => {
+  expectBlocked(`존재 확인 N인 신규 연구를 ${rel}로 기록`, [NS({ existence_checked: "N" })], [MR({ relation_to_app: rel })], "서지 존재 확인 전");
+});
+expectBlocked("존재 확인 빈칸인 신규 연구를 contradict로 기록", [NS({ existence_checked: "" })], [MR({ relation_to_app: "contradict" })], "서지 존재 확인 전");
+expectBlocked("existence_checked가 Y인데 existence_source가 비어 있음", [NS({ existence_source: "" })], null, "existence_source");
+test("A. 정상: 존재 확인 N·빈칸인 신규 연구도 조사 후보로 등록하고 판단 보류(undetermined)로 연결 가능", () => {
+  const root = withWork([NS({ existence_checked: "N", existence_source: "" }), NS({ new_study_id: "new:fixture-d", doi: "10.9999/fixture.0004", existence_checked: "", existence_source: "" })],
+    [MR({ relation_to_app: "undetermined" }), MR({ matrix_row_id: "W2", study_id: "new:fixture-d", relation_to_app: "undetermined", finding_type: "", finding_text: "" })]);
+  rebuild(root);
+  const r = verify(root);
+  return r.errors.length === 0 || "오류: " + r.errors.join(" / ");
+});
+test("A. 정상: 앱 인용 연구는 신규 목록·존재 확인 없이 지금처럼 반박 등으로 연결 가능", () => {
+  const root = withWork(null, [MR({ study_id: "noteboom-2024", relation_to_app: "contradict" }), MR({ matrix_row_id: "W2", study_id: "nevalainen-2016", location_id: "bench.adj.load.fact", relation_to_app: "support_direct" })]);
+  const d = rebuild(root);
+  const r = verify(root);
+  if (r.errors.length) return "오류: " + r.errors.join(" / ");
+  const l = d.links.find(x => x.study_id === "noteboom-2024" && x.location_id === "bench.adj.grip.fact");
+  return (l && l.work_relation === "contradict") || "앱 인용 연구 연결이 자료에 없음";
+});
 expectBlocked("관계 값이 정해진 목록 밖", [NS()], [MR({ relation_to_app: "supports" })], "relation_to_app");
 expectBlocked("결과 종류 값이 E0~E4·E9 밖", [NS()], [MR({ finding_type: "E5" })], "finding_type");
 expectBlocked("E0(존재만 확인)인데 직접 지지로 기록", [NS()], [MR({ finding_type: "E0", relation_to_app: "support_direct" })], "E0");
