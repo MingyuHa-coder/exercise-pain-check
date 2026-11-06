@@ -294,6 +294,15 @@ async function flowTests(b) {
 
   if (!QUICK) await flowTests(b);
   }
+  // 근거-판단 규칙 추적 자료 (tools/audit). 다른 폴더의 앱을 검사할 때(--app)는 건너뛴다.
+  if (ONLY !== 'review' && !opt('--app')) {
+    const { spawnSync } = require('child_process');
+    const run = (file, extra = []) => spawnSync(process.execPath, [path.join(__dirname, '..', 'tools', 'audit', file), ...extra], { encoding: 'utf8' });
+    const v = run('verify-trace.js', ['--topic', 'bench']);
+    ok("추적 자료 검증 (bench: 최신·규칙 기준 자료·독립 모델·고정 사례·Work ID)", v.status === 0, (v.stdout.match(/^FAIL .*/gm) || []).join(" / "));
+    const t = run('test-audit.js', QUICK ? ['--quick'] : []);
+    ok("추적 시스템 재현 테스트 (신규 논문 차단·우선순위 변경 감지)", t.status === 0, (t.stdout.match(/^FAIL .*/gm) || []).join(" / ") + (t.stderr || "").slice(0, 300));
+  }
   console.log("page errors:", errs.length ? errs : "없음");
   ok("페이지 오류 없음", errs.length === 0, errs.join(" | "));
   console.log(`\n합계 PASS ${pass} / FAIL ${fail}`);

@@ -1,2 +1,3 @@
-matrix_row_id,study_id,citation,location_id,rule_ids,finding_type,population,study_design,finding_text,supports_app_claim,work_grade,checked_by,checked_date,notes
-EX-1,(예시 — 지우고 사용) nevalainen-2016,"저자, 연도, 학술지",bench.pat.acj.evText,bench.S.acj.load=gt15,E3,(논문 본문에서 확인한 대상),(논문 본문에서 확인한 설계),(논문이 실제로 보고한 내용),(예 / 아니오 / 일부 / 판단 불가),(Work 기준 등급),(Work),(YYYY-MM-DD),
+matrix_row_id,study_id,citation,location_id,rule_ids,finding_type,population,study_design,finding_text,relation_to_app,relation_note,work_grade,checked_by,checked_date,notes
+EX-1,(예시 — 지우고 사용. 앱 인용 연구는 근거 연결표의 study_id) nevalainen-2016,"저자, 연도, 학술지",bench.pat.acj.evText,bench.S.acj.load=gt15,(E0~E4·E9),(논문 본문에서 확인한 대상),(논문 본문에서 확인한 설계),(논문이 실제로 보고한 내용),(support_direct / contradict / indirect / not_applicable / undetermined),(관계를 그렇게 본 이유),(Work 기준 등급),(Work),(YYYY-MM-DD),
+EX-2,(예시 — 지우고 사용. 새로 찾은 연구는 신규 목록의 new: ID) new:kim-2025-bench-grip,"저자, 연도, 학술지",bench.adj.grip.fact,,(E0~E4·E9),,,,(관계 코드),,,,(YYYY-MM-DD),

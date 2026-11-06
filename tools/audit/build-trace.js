@@ -7,25 +7,31 @@
      <topic>-evidence-links.csv   연구 ID ↔ 코드 위치 ↔ 앱 문장 ↔ 관련 규칙·질문
      <topic>-review-questions.md  전문가 검토가 필요한 판단 규칙 목록
      <topic>-trace.json           위 내용을 기계가 읽는 형식으로 (Work의 Evidence Matrix와 합칠 때 사용)
-   docs/audit/work/<topic>-evidence-matrix.csv 가 있으면 연구 ID로 합쳐서 함께 보여준다.
+   docs/audit/work/<topic>-evidence-matrix.csv, <topic>-new-studies.csv 가 있으면 연구 ID로 합쳐서 함께 보여준다
+     (<topic>-new-study-links.csv: Work가 새로 찾은 연구 × 연결한 앱 주장·규칙).
    앱 파일은 읽기만 한다.
    ========================================================= */
 const fs = require("fs");
 const path = require("path");
 const L = require("./lib");
+const W = require("./work");
 
 const args = process.argv.slice(2);
 const TOPIC = (args[args.indexOf("--topic") + 1] && args.includes("--topic")) ? args[args.indexOf("--topic") + 1] : "bench";
 const OUT = path.join(L.ROOT, "docs", "audit");
-const SAMPLES = 50000;
+const DEFAULT_SAMPLES = 50000;
 
-function build(topic = TOPIC) {
-  const app = L.loadApp();
+/* opts.root: 검사할 앱 폴더(기본: 이 저장소), opts.workDir: Work 자료 폴더(기본: docs/audit/work) */
+function build(topic = TOPIC, opts = {}) {
+  const root = opts.root || L.ROOT;
+  const SAMPLES = opts.samples || DEFAULT_SAMPLES;
+  const workDir = opts.workDir || path.join(root, "docs", "audit", "work");
+  const app = L.loadApp(root);
   const T = app.TOPICS[topic];
   if (!T) throw new Error(`주제 ${topic} 없음`);
   const topicFile = `content/topics/${topic}.js`;
   const files = [topicFile, "content/common.js"];
-  const manualPath = path.join(__dirname, "manual", `${topic}.json`);
+  const manualPath = path.join(root, "tools", "audit", "manual", `${topic}.json`);
   const manual = fs.existsSync(manualPath) ? JSON.parse(fs.readFileSync(manualPath, "utf8")) : { reviewItems: {}, selectionNotes: {}, priorityNotes: {} };
   const parsed = L.parseAnalyse(topic, T.analyse.toString(), app.fileText(topicFile));
   const has = app.has;
@@ -155,30 +161,77 @@ function build(topic = TOPIC) {
     });
   });
   // Work 칸 (비워 둠)
-  links.forEach(x => Object.assign(x, { claim_category: L.MANUAL, work_matrix_row: "", work_finding_type: "", work_grade: "", work_note: "" }));
+  links.forEach(x => Object.assign(x, { claim_category: L.MANUAL, work_matrix_row: "", work_finding_type: "", work_relation: "", work_grade: "", work_note: "" }));
 
-  /* ---- 8. Work Evidence Matrix 합치기 (파일이 있을 때만) ---- */
-  const workPath = path.join(OUT, "work", `${topic}-evidence-matrix.csv`);
-  let work = null;
-  if (fs.existsSync(workPath)) {
-    work = parseCsv(fs.readFileSync(workPath, "utf8"));
-    links.forEach(x => {
-      const rows = work.filter(w => w.study_id === x.study_id && (!w.location_id || w.location_id === x.location_id));
-      if (rows.length) Object.assign(x, { work_matrix_row: rows.map(w => w.matrix_row_id).join(" "), work_finding_type: rows.map(w => w.finding_type).join(" / "), work_grade: rows.map(w => w.work_grade).join(" / "), work_note: rows.map(w => w.finding_text).join(" / ") });
+  /* ---- 8. Work 자료 (있을 때만). 앱 파일은 바꾸지 않고 이 자료에만 붙인다 ---- */
+  const work = W.loadWork(workDir, topic);
+  const matrixRows = work.matrix ? work.matrix.rows : [];
+  links.forEach(x => {
+    const rows = matrixRows.filter(w => w.study_id === x.study_id && (!w.location_id || w.location_id === x.location_id));
+    if (rows.length) Object.assign(x, { work_matrix_row: rows.map(w => w.matrix_row_id).join(" "), work_finding_type: rows.map(w => w.finding_type).join(" / "),
+      work_relation: rows.map(w => w.relation_to_app).join(" / "), work_grade: rows.map(w => w.work_grade).join(" / "), work_note: rows.map(w => w.finding_text).join(" / ") });
+  });
+  const locOwner = new Map(locs.map(l => [l.id, l]));
+  const newStudies = work.newStudies ? work.newStudies.rows : [];
+  const newLinks = [];
+  newStudies.forEach(ns => {
+    const rows = matrixRows.filter(w => w.study_id === ns.new_study_id);
+    (rows.length ? rows : [null]).forEach(w => {
+      const l = w && w.location_id ? locOwner.get(w.location_id) : null;
+      newLinks.push({ new_study_id: ns.new_study_id, doi: ns.doi, pmid: ns.pmid, title: ns.title, first_author: ns.first_author, year: ns.year,
+        existence_checked: ns.existence_checked || "", existence_source: ns.existence_source || "",
+        matrix_row_id: w ? w.matrix_row_id : "", finding_type: w ? w.finding_type : "", finding_text: w ? w.finding_text : "",
+        relation_to_app: w ? w.relation_to_app : "", relation_label: w && w.relation_to_app ? (W.RELATIONS[w.relation_to_app] || w.relation_to_app) : "",
+        target_location_id: w ? w.location_id : "", target_location: l ? l.where : "", target_claim_text: l ? l.text : "",
+        target_rule_ids: w ? w.rule_ids : "", target_variables: l && l.owner.type === "pattern" ? l.owner.id : "", target_adjustments: l && l.owner.type === "adjustment" ? l.owner.id : "",
+        work_grade: w ? w.work_grade : "", app_changed: "아니오 (앱 근거 표시·문구는 자동으로 바뀌지 않음)" });
     });
-  }
+  });
 
+  /* ---- 8-2. 최종 결과 독립 모델과 고정 사례 ---- */
+  const model = L.buildModel(T, parsed);
+  let modelMismatch = null; const modelExamples = [];
+  if (model.ok) {
+    modelMismatch = 0; const r2 = L.rng(9090);
+    for (let i = 0; i < SAMPLES; i++) {
+      const a = L.randomAnswers(T, r2);
+      const real = app.run(topic, a).r;
+      const got = model.run(a, has);
+      const rr = { patterns: real.patterns, adjustments: real.adjustments, unclear: !!real.unclear, referFirst: !!real.referFirst };
+      if (JSON.stringify(got) !== JSON.stringify(rr)) { modelMismatch++; if (modelExamples.length < 3) modelExamples.push({ a, model: got, real: rr }); }
+    }
+  }
+  const cases = L.runCases(app, topic, path.join(root, "tools", "audit", "cases", `${topic}.json`));
+  /* 규칙별 검증 수준 */
+  const covered = {}; (cases ? cases.results : []).forEach(c => (c.covers || []).forEach(id => { (covered[id] = covered[id] || []).push(c); }));
+  const notApplicable = (cases && cases.spec.notApplicable) || {};
+  const ruleRows = [
+    ...parsed.scoreRules.map(r => ({ id: r.id, kind: "점수" })), ...parsed.selection.map(r => ({ id: r.id, kind: "변수 선택" })),
+    ...parsed.pickRules.map(r => ({ id: r.id, kind: "조정 후보·우선순위" })), ...COMMON_RULES.map(r => ({ id: r.id, kind: "공통 마무리" })),
+    ...(parsed.referArgs ? [{ id: `${topic}.REFER.daily`, kind: "진료 먼저 조건" }] : []),
+  ].map(r => {
+    const cs = covered[r.id] || [];
+    const parsedOk = r.kind === "점수" || r.kind === "조정 후보·우선순위" ? (stats.scoreMismatch === 0 && stats.pickMismatch === 0) : r.kind === "변수 선택" ? model.ok : r.kind === "공통 마무리" ? model.ok : model.ok;
+    const casePass = cs.length > 0 && cs.every(c => c.pass);
+    const partial = (cases && cases.spec.partial && cases.spec.partial[r.id]) ? ` · 일부 미확인: ${cases.spec.partial[r.id]}` : "";
+    const status = notApplicable[r.id] ? `${L.MANUAL} — ${notApplicable[r.id]}` :
+      casePass && parsedOk ? "동작 확인 (고정 사례 + 해석·모델 대조)" :
+      cs.length && !casePass ? "실패 — 고정 사례 결과가 기대와 다름" :
+      parsedOk ? `${L.MANUAL} (해석 대조만: 같은 코드에서 나온 해석이라 독립 확인 아님. 고정 사례 없음)` : L.MANUAL;
+    return { ...r, cases: cs.map(c => c.id), status: status + partial };
+  });
   /* ---- 9. 연구별 역추적 ---- */
   const byStudy = {};
   links.filter(x => x.study_id).forEach(x => { (byStudy[x.study_id] = byStudy[x.study_id] || []).push(x); });
 
   const reviewRecords = []; // 검토 상태는 바꾸지 않는다. 문서에는 "검토 전"만 적는다(review-status.js 기록 0개 기준).
   const fp = L.topicFingerprint(app, topic);
-  return { topic, T, app, parsed, questions, COMMON_RULES, flags, stats, pct, perturb, base, locs, links, byStudy, manual, work, fp, files, reviewRecords };
+  return { topic, T, app, root, parsed, questions, COMMON_RULES, flags, stats, pct, perturb, base, locs, links, byStudy, manual, work, newLinks, model, modelMismatch, modelExamples, cases, ruleRows, fp, files, reviewRecords };
 }
 
 /* ---------- CSV ---------- */
-const CSV_COLS = ["link_id", "study_id", "study_name_in_code", "registry", "study_type_in_app", "population_in_app", "population_shown", "location_id", "location", "element_kind", "app_label", "shown_to_user", "claim_text", "sentence_study_mapping", "related_variables", "related_adjustments", "related_rule_ids", "related_question_ids", "related_question_ids_indirect", "claim_category", "work_matrix_row", "work_finding_type", "work_grade", "work_note"];
+const CSV_COLS = ["link_id", "study_id", "study_name_in_code", "registry", "study_type_in_app", "population_in_app", "population_shown", "location_id", "location", "element_kind", "app_label", "shown_to_user", "claim_text", "sentence_study_mapping", "related_variables", "related_adjustments", "related_rule_ids", "related_question_ids", "related_question_ids_indirect", "claim_category", "work_matrix_row", "work_finding_type", "work_relation", "work_grade", "work_note"];
+const NEW_LINK_COLS = ["new_study_id", "doi", "pmid", "title", "first_author", "year", "existence_checked", "existence_source", "matrix_row_id", "finding_type", "finding_text", "relation_to_app", "relation_label", "target_location_id", "target_location", "target_claim_text", "target_rule_ids", "target_variables", "target_adjustments", "work_grade", "app_changed"];
 const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 function toCsv(rows, cols) { return [cols.join(","), ...rows.map(r => cols.map(c => q(r[c])).join(","))].join("\n") + "\n"; }
 function parseCsv(text) {
@@ -227,11 +280,12 @@ function traceMd(d) {
   parsed.selection.forEach((x, i) => { s += `| \`${x.id}\` | \`${md(x.code)}\` | ${d.files[0]}:${x.line} | ${md((manual.selectionNotes || {})[String(i + 1)] || L.MANUAL)} |\n`; });
   s += `| \`common.F.zero\` | 공통 | ${COMMON_RULES.find(c => c.id === "common.F.zero").where} | ${md(COMMON_RULES.find(c => c.id === "common.F.zero").text)} |\n`;
 
-  s += `\n## 4. 조정 후보 규칙과 우선순위 (\`${topic}.P.*\`)\n\n숫자가 작을수록 먼저 보인다. 후보 중 상위 3개만 화면에 나온다(\`common.F.top3\`).\n\n| 규칙 ID | 조정 | 후보가 되는 조건 | 우선순위 | 위치 | 표본에서 후보 / 최종 표시 / 3개 제한으로 빠짐 |\n| --- | --- | --- | --- | --- | --- |\n`;
+  s += `\n## 4. 조정 후보 규칙과 우선순위 (\`${topic}.P.*\`)\n\n숫자가 작을수록 먼저 보인다. 후보 중 상위 3개만 화면에 나온다(\`common.F.top3\`).\n\n| 규칙 ID | 조정 | 후보가 되는 조건 | 우선순위 | 위치 | 무작위 답에서 후보 / 최종 표시 / 3개 제한으로 빠짐 (※) |\n| --- | --- | --- | --- | --- | --- |\n`;
   parsed.pickRules.forEach(p => {
     const pr = p.priority !== null ? p.priority : `${p.priorityRule.ifTrue} 또는 ${p.priorityRule.ifFalse}: \`${md(p.priorityRule.expr)}\`이 참이면 ${p.priorityRule.ifTrue}${(manual.priorityNotes || {})[p.id] ? ` — ${md(manual.priorityNotes[p.id])} (수동 설명)` : ""}`;
     s += `| \`${p.id}\` | ${md(T.adjustments[p.adj]?.title || L.MANUAL)} | ${p.cond ? md(L.condText(p.cond)) : "항상"} | ${pr} | ${d.files[0]}:${p.line} | ${pct(stats.cand[p.adj])} / ${pct(stats.fin[p.adj])} / ${pct(stats.cut[p.adj])} |\n`;
   });
+  s += `\n※ 무작위 답 비율은 모든 답을 같은 확률로 골랐을 때의 값이다. **실제 이용자가 이 조정을 받는 비율이 아니다.** 규칙이 얼마나 자주 겹치거나 잘리는지 보는 용도로만 쓴다.\n`;
   s += `\n## 5. 공통 마무리 규칙 (\`js/app.js\` \`finish()\`)\n\n| 규칙 ID | 내용 | 위치 |\n| --- | --- | --- |\n`;
   COMMON_RULES.forEach(c => { s += `| \`${c.id}\` | ${md(c.text)}${c.found ? "" : ` **(코드에서 찾지 못함: ${L.MANUAL})**`} | ${c.where} |\n`; });
   if (parsed.referArgs) s += `| \`${topic}.REFER.daily\` | 주제 조건: ${Array.isArray(parsed.referArgs.referDaily) ? md(L.condText(parsed.referArgs.referDaily)) : `\`${md(parsed.referArgs.referDaily.expr)}\` (${L.MANUAL})`} 이면 '진료를 먼저 권해요' | ${d.files[0]}:${parsed.referArgs.line} |\n`;
@@ -255,9 +309,39 @@ function traceMd(d) {
   s += `## 8. 한 답만 바꿨을 때 (예시 답변 기준)\n\n예시 답변의 결과: 변수 ${base.patterns.map(x => `\`${x}\``).join(", ")} · 조정 ${base.adjustments.map(x => `\`${x}\``).join(", ")}\n\n| 질문 | 바꾼 답 | 결과 변수 | 최종 조정 | 진료 먼저 | 달라짐 |\n| --- | --- | --- | --- | --- | --- |\n`;
   perturb.forEach(p => { s += `| \`${p.q}\` | ${p.change} | ${p.patterns.join(", ") || "(없음)"}${p.unclear ? " · 좁히기 어려움" : ""} | ${p.adjustments.join(", ") || "(없음)"} | ${p.referFirst ? "예" : ""} | ${p.changed ? "**예**" : ""} |\n`; });
 
-  s += `\n## 9. 무작위 답변 ${stats.n.toLocaleString()}개에서 본 결과\n\n| 변수 | 결과에 나옴 | 맨 앞에 나옴 |\n| --- | --- | --- |\n`;
+  s += `\n## 9. 무작위 답변 ${stats.n.toLocaleString()}개에서 본 결과 (실제 이용자 빈도 아님)\n\n| 변수 | 결과에 나옴 | 맨 앞에 나옴 |\n| --- | --- | --- |\n`;
   Object.keys(T.patterns).forEach(k => { s += `| \`${k}\` | ${pct(stats.pattern[k])} | ${pct(stats.patternMain[k])} |\n`; });
-  s += `\n좁히기 어려움 ${pct(stats.unclear)} · 진료 먼저 안내 ${pct(stats.referFirst)} · 조정 없음 ${pct(stats.noAdj)}\n`;
+  s += `\n좁히기 어려움 ${pct(stats.unclear)} · 진료 먼저 안내 ${pct(stats.referFirst)} · 조정 없음 ${pct(stats.noAdj)}\n\n**주의:** 이 비율은 모든 답을 같은 확률로 무작위로 고른 답에서 나온 것이다. 실제 이용자 집단에서의 빈도가 아니며, 어떤 결과가 흔하다거나 드물다는 근거로 쓰면 안 된다.\n`;
+  s += verifyMd(d) + workMd(d);
+  return s;
+}
+
+function verifyMd(d) {
+  const { topic, stats, model, modelMismatch, cases, ruleRows } = d;
+  let s = `\n## 10. 검증 수준\n\n세 가지를 구분한다.\n\n`;
+  s += `1. **해석 대조:** 코드에서 해석한 점수·후보 규칙을 실제 \`analyse()\`와 무작위 답 ${stats.n.toLocaleString()}개로 비교 (점수 불일치 ${stats.scoreMismatch}건, 후보 불일치 ${stats.pickMismatch}건). 같은 코드에서 나온 해석이라 **해석이 정확한지만** 확인한다.\n`;
+  s += `2. **최종 결과 모델 대조:** 변수 선택·조건부 우선순위·공통 마무리(상위 3개, 0점 제외, 좁히기 어려움, 진료 먼저)를 \`js/app.js\`를 쓰지 않고 규칙 표대로 따로 구현해 실제 결과와 비교 — ${model.ok ? `무작위 답 ${stats.n.toLocaleString()}개에서 불일치 **${modelMismatch}건**` : `**모델을 만들 수 없음 (${model.why.join(", ")}) → ${L.MANUAL}**`}\n`;
+  s += `3. **고정 사례:** 사람이 규칙 표로 기대값을 미리 계산해 둔 답 조합 (\`tools/audit/cases/${topic}.json\`) — ${cases ? `${cases.results.length}개 중 통과 **${cases.results.filter(c => c.pass).length}개**` : `사례 파일 없음 → ${L.MANUAL}`}\n\n`;
+  s += `이 세 가지는 **코드가 적힌 규칙대로 동작하는지**만 확인한다. 규칙이 의학적으로 맞는지는 확인하지 않는다(전문가 검토: [${topic}-review-questions.md](${topic}-review-questions.md)).\n\n`;
+  if (cases) {
+    s += `### 고정 사례\n\n| 사례 | 내용 | 기대 변수 | 기대 조정 | 좁히기 어려움 / 진료 먼저 | 결과 |\n| --- | --- | --- | --- | --- | --- |\n`;
+    cases.results.forEach(c => { s += `| ${c.id} | ${md(c.desc)} | ${c.expect.patterns.join(", ") || "(없음)"} | ${c.expect.adjustments.join(", ") || "(없음)"} | ${c.expect.unclear ? "예" : "-"} / ${c.expect.referFirst ? "예" : "-"} | ${c.pass ? "통과" : `**실패** (실제: ${c.got.patterns.join(",")} → ${c.got.adjustments.join(",")})`} |\n`; });
+    s += `\n고정 사례의 답은 기본 답(모든 점수 0)에서 일부만 바꾼 것이다: \`${md(JSON.stringify(cases.spec.base))}\`\n\n`;
+  }
+  s += `### 규칙별 동작 확인 상태 (코드 동작만. 의학적 타당성은 모두 전문가 검토 전)\n\n| 규칙 ID | 종류 | 고정 사례 | 상태 |\n| --- | --- | --- | --- |\n`;
+  ruleRows.forEach(r => { s += `| \`${r.id}\` | ${r.kind} | ${r.cases.join(", ") || "-"} | ${md(r.status)} |\n`; });
+  return s;
+}
+function workMd(d) {
+  const { topic, work, newLinks, links } = d;
+  let s = `\n## 11. Work 자료 연결\n\nWork 자료는 이 문서와 근거 연결표에만 붙는다. **앱의 근거 표시·근거 등급·사용자 문구·검토 상태는 자동으로 바뀌지 않는다.**\n\n`;
+  s += `- Work 행렬 (\`docs/audit/work/${topic}-evidence-matrix.csv\`): ${work.matrix ? `${work.matrix.rows.length}행` : "없음"}\n`;
+  s += `- 신규 연구 목록 (\`docs/audit/work/${topic}-new-studies.csv\`): ${work.newStudies ? `${work.newStudies.rows.length}개` : "없음"}\n`;
+  s += `- 앱 인용 연구 중 Work 결과가 붙은 근거 연결: ${links.filter(x => x.work_matrix_row).length}줄 / ${links.length}줄\n\n`;
+  if (newLinks.length) {
+    s += `### 신규 발굴 연구와 앱 주장의 관계\n\n| 신규 연구 | 식별 | 존재 확인 | 결과 종류 | 앱 대상 | 관계 |\n| --- | --- | --- | --- | --- | --- |\n`;
+    newLinks.forEach(n => { s += `| \`${n.new_study_id}\` ${md(n.title)} | ${[n.doi && "DOI " + n.doi, n.pmid && "PMID " + n.pmid].filter(Boolean).join(" · ") || "-"} | ${n.existence_checked || "-"} | ${n.finding_type ? `${n.finding_type} ${W.FINDING_TYPES[n.finding_type] || ""}` : "-"} | ${n.target_location_id || n.target_rule_ids || "(연결 없음)"} | ${n.relation_label || "-"} |\n`; });
+  }
   return s;
 }
 
@@ -303,17 +387,19 @@ function reviewMd(d) {
 }
 
 function write(d) {
-  fs.mkdirSync(OUT, { recursive: true });
   const files = {
     [`${d.topic}-traceability.md`]: traceMd(d),
     [`${d.topic}-evidence-links.csv`]: toCsv(d.links, CSV_COLS),
     [`${d.topic}-review-questions.md`]: reviewMd(d),
+    [`${d.topic}-new-study-links.csv`]: toCsv(d.newLinks, NEW_LINK_COLS),
     [`${d.topic}-trace.json`]: JSON.stringify({
       topic: d.topic, contentVersion: d.app.CONTENT_VERSION, fingerprint: d.fp,
       questions: d.questions, scoreRules: d.parsed.scoreRules, selection: d.parsed.selection, pickRules: d.parsed.pickRules,
       referArgs: d.parsed.referArgs, commonRules: d.COMMON_RULES.map(({ needle, ...c }) => c), flags: d.flags,
       unparsed: d.parsed.unparsed, links: d.links,
-      verification: { samples: d.stats.n, scoreMismatch: d.stats.scoreMismatch, pickMismatch: d.stats.pickMismatch },
+      verification: { samples: d.stats.n, scoreMismatch: d.stats.scoreMismatch, pickMismatch: d.stats.pickMismatch, finalModel: d.model.ok ? "available" : d.model.why, finalModelMismatch: d.modelMismatch,
+        cases: d.cases ? d.cases.results.map(c => ({ id: c.id, pass: c.pass })) : null },
+      ruleStatus: d.ruleRows, newStudyLinks: d.newLinks,
     }, null, 1) + "\n",
   };
   return files;
@@ -322,11 +408,16 @@ function write(d) {
 module.exports = { build, write, CSV_COLS, parseCsv, OUT };
 
 if (require.main === module) {
-  const d = build(TOPIC);
+  const opt = n => args.includes(n) ? path.resolve(args[args.indexOf(n) + 1]) : null;
+  const root = opt("--root") || L.ROOT;
+  const outDir = opt("--out") || path.join(root, "docs", "audit");
+  const d = build(TOPIC, { root, workDir: opt("--work") || undefined });
   const files = write(d);
-  for (const [name, content] of Object.entries(files)) fs.writeFileSync(path.join(OUT, name), content);
-  console.log(`만듦: ${Object.keys(files).map(f => "docs/audit/" + f).join(", ")}`);
+  fs.mkdirSync(outDir, { recursive: true });
+  for (const [name, content] of Object.entries(files)) fs.writeFileSync(path.join(outDir, name), content);
+  console.log(`만듦: ${Object.keys(files).map(f => path.relative(root, path.join(outDir, f))).join(", ")}`);
   console.log(`점수 규칙 ${d.parsed.scoreRules.length} · 조정 후보 규칙 ${d.parsed.pickRules.length} · 선택 줄 ${d.parsed.selection.length} · 해석 못 한 줄 ${d.parsed.unparsed.length}`);
-  console.log(`대조(무작위 ${d.stats.n}): 점수 불일치 ${d.stats.scoreMismatch} · 후보 불일치 ${d.stats.pickMismatch}`);
-  console.log(`근거 연결 ${d.links.length}줄 · 수동 검토 필요 ${d.links.filter(x => Object.values(x).some(v => String(v).startsWith(L.MANUAL) && v !== x.claim_category)).length}줄${d.work ? " · Work 행렬 합침" : " · Work 행렬 없음"}`);
+  console.log(`해석 대조(무작위 ${d.stats.n}): 점수 불일치 ${d.stats.scoreMismatch} · 후보 불일치 ${d.stats.pickMismatch}`);
+  console.log(`최종 결과 모델: ${d.model.ok ? `불일치 ${d.modelMismatch}` : "만들 수 없음 (" + d.model.why.join(", ") + ")"} · 고정 사례: ${d.cases ? `${d.cases.results.filter(c => c.pass).length}/${d.cases.results.length} 통과` : "없음"}`);
+  console.log(`근거 연결 ${d.links.length}줄 · Work 행렬 ${d.work.matrix ? d.work.matrix.rows.length + "행" : "없음"} · 신규 연구 ${d.work.newStudies ? d.work.newStudies.rows.length + "개" : "없음"}`);
 }

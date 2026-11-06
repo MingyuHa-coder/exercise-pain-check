@@ -270,6 +270,100 @@ function locateLoose(app, text, files) {
   return null;
 }
 
+/* ---------- 독립 모델: 변수 선택 · 조건부 우선순위 · 공통 마무리 ----------
+   점수·후보 조건은 코드에서 해석한 것을 쓰지만, 공통 마무리(상위 3개, 0점 제외, 좁히기 어려움, 진료 먼저 변수,
+   진료 먼저 안내)는 js/app.js를 쓰지 않고 rule-inventory.md에 적힌 규칙대로 여기서 따로 구현한다.
+   지원하지 않는 형태가 있으면 null을 돌려준다 → 그 주제의 최종 결과는 "수동 검토 필요". */
+function parseSelection(parsed) {
+  const steps = [];
+  for (const x of parsed.selection) {
+    let m;
+    if ((m = x.code.match(/^const main = sc\.(\w+) (>=|>) sc\.(\w+) \? "(\w+)" : "(\w+)";$/))) steps.push({ t: "main", a: m[1], op: m[2], b: m[3], yes: m[4], no: m[5] });
+    else if ((m = x.code.match(/^const other = main === "(\w+)" \? "(\w+)" : "(\w+)";$/))) steps.push({ t: "other", eq: m[1], yes: m[2], no: m[3] });
+    else if (/^const patterns = \[main\];$/.test(x.code)) steps.push({ t: "start" });
+    else if ((m = x.code.match(/^if \(sc\[other\] >= (\d+)\) patterns\.push\(other\);$/))) steps.push({ t: "addOther", min: +m[1] });
+    else if ((m = x.code.match(/^if \(sc\.(\w+) >= (\d+)\) patterns\.push\("(\w+)"\);$/)) && m[1] === m[3]) steps.push({ t: "add", v: m[1], min: +m[2] });
+    else return null;
+  }
+  return steps;
+}
+function runSelection(steps, sc) {
+  let main = null, other = null; const patterns = [];
+  for (const s of steps) {
+    if (s.t === "main") main = (s.op === ">" ? sc[s.a] > sc[s.b] : sc[s.a] >= sc[s.b]) ? s.yes : s.no;
+    else if (s.t === "other") other = main === s.eq ? s.yes : s.no;
+    else if (s.t === "start") patterns.push(main);
+    else if (s.t === "addOther") { if (sc[other] >= s.min) patterns.push(other); }
+    else if (s.t === "add") { if (sc[s.v] >= s.min) patterns.push(s.v); }
+  }
+  return { main, patterns };
+}
+/* 조건부 우선순위 식: main === "x" 와 has(a, "q", "v") 를 || 로 묶은 형태만 */
+function parsePriorityExpr(expr) {
+  const terms = [];
+  for (const part of expr.split("||").map(t => t.trim())) {
+    let m;
+    if ((m = part.match(/^main === "(\w+)"$/))) terms.push({ main: m[1] });
+    else if ((m = part.match(/^has\(a,\s*"([^"]+)",\s*"([^"]+)"\)$/))) terms.push({ q: m[1], v: m[2] });
+    else return null;
+  }
+  return terms;
+}
+function modelPicks(parsed, a, has, main) {
+  const out = [];
+  for (const p of parsed.pickRules) {
+    if (p.cond && !condTrue(p.cond, a, has)) continue;
+    let pr = p.priority;
+    if (pr === null) {
+      const terms = parsePriorityExpr(p.priorityRule.expr);
+      if (!terms) return null;
+      pr = terms.some(t => t.main ? main === t.main : has(a, t.q, t.v)) ? p.priorityRule.ifTrue : p.priorityRule.ifFalse;
+    }
+    out.push([p.adj, pr]);
+  }
+  return out;
+}
+/* rule-inventory.md 2장의 공통 규칙을 그대로 옮긴 별도 구현 */
+function modelFinish(T, a, has, sc, patterns, picks, referTopic) {
+  const ordered = picks.map((p, i) => ({ id: p[0], pr: p[1], i })).sort((x, y) => x.pr - y.pr || x.i - y.i);
+  let adjustments = ordered.slice(0, 3).map(x => x.id);
+  const kept = patterns.filter(p => !(p in sc && sc[p] === 0));
+  const unclear = patterns.length > 0 && kept[0] !== patterns[0];
+  if (unclear && kept.length === 0) adjustments = [];
+  if (kept.some(p => T.patterns[p] && T.patterns[p].referOnly)) adjustments = [];
+  const referFirst = !!referTopic || has(a, "dur", "gt6") || has(a, "trend", "worse");
+  return { patterns: kept, adjustments, unclear, referFirst };
+}
+function buildModel(T, parsed) {
+  const steps = parseSelection(parsed);
+  const why = [];
+  if (!steps) why.push("변수 선택 줄 중 지원하지 않는 형태가 있음");
+  for (const p of parsed.pickRules) if (p.priority === null && !parsePriorityExpr(p.priorityRule.expr)) why.push(`${p.id}의 조건부 우선순위 식`);
+  const ra = parsed.referArgs;
+  if (!ra || !Array.isArray(ra.referDaily)) why.push("주제별 진료 먼저 조건");
+  if (ra && ra.referNerve) why.push("주제별 두 번째 진료 먼저 조건");
+  if (parsed.unparsed.length) why.push("해석 못 한 줄");
+  if (why.length) return { ok: false, why };
+  return { ok: true, steps, run: (a, has) => {
+    const sc = modelScores(parsed, a, has);
+    const sel = runSelection(steps, sc);
+    const picks = modelPicks(parsed, a, has, sel.main);
+    return modelFinish(T, a, has, sc, sel.patterns, picks, condTrue(ra.referDaily, a, has));
+  } };
+}
+/* 고정 사례 실행 (기대값은 사람이 규칙 표로 계산해 둔 것) */
+function runCases(app, topic, caseFile) {
+  if (!fs.existsSync(caseFile)) return null;
+  const spec = JSON.parse(fs.readFileSync(caseFile, "utf8"));
+  const results = spec.cases.map(c => {
+    const a = { ...spec.base, ...c.set };
+    const r = app.run(topic, a).r;
+    const got = { patterns: r.patterns, adjustments: r.adjustments, unclear: !!r.unclear, referFirst: !!r.referFirst };
+    return { ...c, answers: a, got, pass: JSON.stringify(got) === JSON.stringify(c.expect) };
+  });
+  return { spec, results };
+}
+
 function sha(s) { return crypto.createHash("sha256").update(s).digest("hex").slice(0, 12); }
 function topicFingerprint(app, topic) {
   const T = app.TOPICS[topic];
@@ -279,5 +373,5 @@ function topicFingerprint(app, topic) {
     (() => { app.ctx.cards.length = 0; try { T.extras({ sc: {}, patterns: [], adjustments: [] }); } catch (e) {} return JSON.stringify(app.ctx.cards); })());
 }
 
-module.exports = { hasCalls, splitTop, ROOT, MANUAL, loadApp, parseAnalyse, modelScores, modelPickSet, condText, condTrue, randomAnswers, rng,
+module.exports = { parseSelection, runSelection, parsePriorityExpr, modelPicks, modelFinish, buildModel, runCases, hasCalls, splitTop, ROOT, MANUAL, loadApp, parseAnalyse, modelScores, modelPickSet, condText, condTrue, randomAnswers, rng,
   evidenceLocations, splitSources, matchStudies, studyIndex, slug, locate, lineOf, topicFingerprint, sha, extractFunction };
