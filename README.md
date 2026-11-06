@@ -57,6 +57,7 @@
 | `docs/rule-inventory.md` | 판단 규칙·점수·진료 시점 전체 목록과 분류, 내부 보존 자료(질환명·진단 관련 문장) |
 | `docs/data-privacy.md` | 저장하는 정보, 저장 형식, 삭제, 서버·계정 확장 때 필요한 것 |
 | `docs/c11-review-cases.md` | C11(진료 먼저 조건과 운동 조정) 전문가 검토 사례 |
+| `docs/audit/`, `tools/audit/` | 근거-판단 규칙 추적 자료와 이를 만드는·검증하는 스크립트 (현재 벤치프레스) |
 | `tests/` | 자동 테스트 (`node tests/run-tests.js`, 사용법은 tests/README.md) |
 | `docs/user-wording-changes.md` | 사용자 문구에서 질환명·진단 표현을 고친 전후 기록과 원래 연구 대상 |
 | `docs/expert-review-request-by-role.md` | 의사·물리치료사·스포츠과학 전문가·트레이너별 검토 요청서 |

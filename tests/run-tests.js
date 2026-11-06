@@ -153,7 +153,7 @@ async function flowTests(b) {
 
   // B. 무작위 답변 조합 검사 (주제당 4000개)
   const B = await p.evaluate(() => {
-    const out = {}; let seed = 7; const rnd = n => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
+    const out = {}; let seed = 7; /* mulberry32 (v8.3: 선형 합동법은 낮은 자리 주기가 짧아 답 조합이 고르게 나오지 않았다) */ const rnd = n => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) % n; };
     for (const id of Object.keys(TOPICS)) {
       setTopic(id); const o = { n: 0, emptyWithAdj: 0, referWithAdj: 0, zeroShown: 0, unclear: 0, unclearKeptAdj: [], errors: 0 };
       for (let i = 0; i < 4000; i++) {

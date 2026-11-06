@@ -1,0 +1,28 @@
+{
+  "_설명": "사람(Claude)이 코드와 문서를 읽고 직접 연결한 정보. 자동 추출이 아니므로 문서에 '수동 연결'로 표시된다. 규칙 ID가 바뀌면 verify-trace.js가 알려준다.",
+  "reviewItems": {
+    "B1": { "title": "상완골 전방활주 안내 카드", "targets": ["bench.card.1"] },
+    "B2": { "title": "쇄골 끝 점수 배분", "targets": ["bench.S.acj.grip=g2", "bench.S.acj.grip=g15", "bench.S.acj.load=gt15"] },
+    "B3": { "title": "1RM 선택지 구간", "targets": ["bench.Q.load"] },
+    "B4": { "title": "팔꿈치 각도 그림", "targets": ["bench.Q.elbow"] },
+    "B5": { "title": "그립 사진", "targets": ["bench.Q.grip"] },
+    "B6": { "title": "어깨 뒤쪽 스트레칭 연결", "targets": ["bench.P.flex"] },
+    "C1": { "title": "점검 변수 점수 규칙", "targets": ["*score", "*selection"] },
+    "C2": { "title": "조정 우선순위·상위 3개", "targets": ["*pick", "common.F.top3"] },
+    "C4": { "title": "진료 먼저 권유 조건", "targets": ["common.F.referLong", "common.F.referWorse", "common.F.referFirst", "bench.REFER.daily"] },
+    "C6": { "title": "위험 신호 문구·시간 표현", "targets": ["bench.FLAG.*"] },
+    "C9": { "title": "답이 모호할 때 (0점 변수 제외)", "targets": ["common.F.zero", "common.F.unclearNoAdj"] },
+    "C10": { "title": "근거 수준 표시 분류", "targets": ["content/studies.js"] },
+    "C11": { "title": "진료 먼저와 조정의 관계", "targets": ["common.F.referOnly", "common.F.referFirst"] }
+  },
+  "selectionNotes": {
+    "1": "rc(어깨 부담)와 acj(어깨 위쪽 부담) 점수를 비교해 acj가 더 크면 acj, 아니면(같을 때 포함) rc를 맨 앞 변수로 정한다.",
+    "2": "맨 앞이 아닌 쪽(rc 또는 acj)을 'other'로 둔다.",
+    "3": "맨 앞 변수로 결과 목록을 시작한다.",
+    "4": "other의 점수가 3 이상이면 함께 보여준다.",
+    "5": "scap(날개뼈) 점수가 2 이상이면 함께 보여준다."
+  },
+  "priorityNotes": {
+    "bench.P.load": "맨 앞 변수가 acj이거나 1RM이 체중 1.5배를 넘으면 우선순위 1, 아니면 6. 조건 없이 항상 후보에 들어간다."
+  }
+}

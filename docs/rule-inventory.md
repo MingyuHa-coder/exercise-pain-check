@@ -7,6 +7,8 @@
 - 검토 상태: 아래 모든 항목이 **검토 전**이다.
 - 이 문서의 점수·기준선·우선순위는 **모두 앱(Claude)이 정한 값**이다. 논문에서 나온 수치가 아니다.
 
+- 규칙별 ID, 근거 연결, 연구별 역추적은 [audit/](audit/README.md) 폴더에 있다 (현재 벤치프레스: [추적표](audit/bench-traceability.md) · [근거 연결표](audit/bench-evidence-links.csv) · [검토 질문](audit/bench-review-questions.md)).
+
 ## 1. 분류
 
 | 분류 | 뜻 |
