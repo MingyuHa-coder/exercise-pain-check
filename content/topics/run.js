@@ -1,6 +1,6 @@
 /* 달리기 무릎·정강이 */
 TOPICS.run = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "달리기 (무릎·정강이)", brand: "달리기 통증 점검", eyebrow: "RUNNING · KNEE · SHIN",
   hero: "달리기에서 무릎이나 정강이가 아프다면",
   redFlags: [

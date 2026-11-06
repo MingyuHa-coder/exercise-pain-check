@@ -1,6 +1,6 @@
 /* 바벨 로우 허리 */
 TOPICS.row = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "바벨 로우 (허리)", brand: "바벨 로우 허리 점검", eyebrow: "BENT-OVER ROW · LOW BACK",
   hero: "바벨 로우할 때 허리가 아프다면",
   redFlags: TOPICS.dl.redFlags,

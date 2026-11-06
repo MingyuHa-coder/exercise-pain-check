@@ -68,9 +68,9 @@ function areaContent(topic, area) {
   const pick = (o, keys) => keys.reduce((m, k) => (o[k] !== undefined ? (m[k] = o[k], m) : m), {});
   const extras = () => { try { return T0.extras({ sc: {}, patterns: [], adjustments: [] }).join(""); } catch (e) { return ""; } };
   switch (area) {
-    case "safety": return JSON.stringify([T0.redFlags, T0.flagLevels, T0.flagSrc]);
+    case "safety": return JSON.stringify([T0.redFlags, T0.flagLevels, T0.flagSrc]) + fnSrc("pickFlagLevel");
     case "questions": return JSON.stringify(T0.questions);
-    case "rules": return T0.analyse.toString() + (typeof finish === "function" ? finish.toString() : "");
+    case "rules": return rulesContent(topic);
     case "adjust": return JSON.stringify(adj.filter(([k]) => !alt.includes(k)));
     case "alt": return JSON.stringify(adj.filter(([k]) => alt.includes(k)));
     case "evidence": return JSON.stringify([Object.values(T0.patterns).map(p => pick(p, ["evText", "src", "hypo", "internal", "internalEv", "term"])),
@@ -79,6 +79,26 @@ function areaContent(topic, area) {
       adj.map(([k, a]) => pick(a, ["title", "how"])), T0.questions.map(q => [q.q, q.hint, q.opts]), T0.flagLevels]) + extras();
   }
   return "";
+}
+/* 함수 원문 (앱 엔진 js/app.js에 있는 공통 함수). 아직 불러오기 전이면 빈 문자열 */
+function fnSrc(name) { const f = typeof window !== "undefined" ? window[name] : undefined; return typeof f === "function" ? f.toString() : ""; }
+/* 판단 규칙 지문에 넣는 것: 결과를 바꿀 수 있는 모든 것
+   - 주제 규칙 analyse()와 공통 함수 finish()·has()
+   - 변수 목록과 결과에 영향을 주는 속성(referOnly 등 화면 문구가 아닌 속성 전부)
+   - 질문의 답 값(규칙이 비교하는 값)과 여러 개 고르기 여부
+   - 조정 목록(id)
+   - 운동 선택 화면에서 미리 채워지는 답(content/body-map.js)
+   - 결과에 영향을 주는 주제 설정값 (meta와 문구 필드를 뺀 나머지 원시값) */
+const WORDING_KEYS = ["title", "plain", "check", "say", "evText", "src", "hypo", "term", "internal", "internalEv", "ev"];
+function rulesContent(topic) {
+  const T0 = TOPICS[topic];
+  const patAttrs = Object.fromEntries(Object.entries(T0.patterns).map(([k, p]) =>
+    [k, Object.fromEntries(Object.entries(p).filter(([f]) => !WORDING_KEYS.includes(f)))]));
+  const answers = T0.questions.map(q => [q.id, q.opts.map(o => o[0]), !!q.multi]);
+  const prefill = (typeof BODY !== "undefined" ? BODY : []).flatMap(b => b.ex.flatMap(e => e.at.filter(x => x[1] === topic).map(x => [b.id, e.n, x[0], x[2] || null])));
+  const settings = Object.fromEntries(Object.entries(T0).filter(([k, v]) => v === null || ["number", "boolean"].includes(typeof v)));
+  return T0.analyse.toString() + fnSrc("finish") + fnSrc("has") +
+    JSON.stringify([patAttrs, answers, Object.keys(T0.adjustments), prefill, settings]);
 }
 function itemContent(key) {
   const [topic, kind, id] = key.split("."); const T0 = TOPICS[topic]; if (!T0) return "";
@@ -123,11 +143,16 @@ function areaStatus(topic, area) {
   if (rec.coverage === "partial") return { state: "none", record: rec, note: `일부 항목만 검토 완료: ${rec.scope}` };
   return { state: "done", record: rec, note: "" };
 }
-/* 항목 표시: 그 항목을 포함한 검토 완료 기록이 있고, 내용이 바뀌지 않았을 때만 */
+/* 항목 표시: 그 항목을 다루는 기록(영역 전체 기록 또는 그 항목을 적은 기록) 중 **가장 최근의 유효한 기록**을 기준으로 한다.
+   그 기록이 "검토 완료"이고 내용이 바뀌지 않았을 때만 표시한다. 완료 뒤에 "수정 필요"·"검토 중" 같은 기록이 들어오면 표시하지 않는다. */
+function recordCovers(r, key) {
+  if (!key.startsWith(r.topic + ".") || areaOfItem(key) !== r.area) return false;
+  const whole = r.coverage === "full" || !(r.items && r.items.length);
+  return whole || r.items.includes(key);
+}
 function itemReview(key) {
-  const recs = REVIEW_RECORDS.filter(r => validRecord(r) && r.state === "done" && isCurrent(r) &&
-    (r.coverage === "partial" ? (r.items || []).includes(key) : key.startsWith(r.topic + ".") && areaOfItem(key) === r.area));
-  return latestRecord(recs);
+  const rec = latestRecord(REVIEW_RECORDS.filter(r => validRecord(r) && recordCovers(r, key)));
+  return rec && rec.state === "done" && isCurrent(rec) ? rec : null;
 }
 function areaOfItem(key) {
   const [topic, kind, id] = key.split(".");

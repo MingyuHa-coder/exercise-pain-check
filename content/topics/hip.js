@@ -1,6 +1,6 @@
 /* 스쿼트·런지 고관절 */
 TOPICS.hip = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "스쿼트·런지·레그프레스 (고관절)", brand: "하체 운동 고관절 점검", eyebrow: "SQUAT · LUNGE · HIP",
   hero: "스쿼트나 런지에서 사타구니·고관절이 아프다면",
   redFlags: [

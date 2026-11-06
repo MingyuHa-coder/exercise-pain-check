@@ -1,6 +1,6 @@
 /* 풀업·랫풀다운 어깨 */
 TOPICS.pul = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "풀업·랫풀다운 (어깨)", brand: "풀업·랫풀다운 어깨 점검", eyebrow: "PULL-UP · PULLDOWN · SHOULDER",
   hero: "풀업이나 랫풀다운에서 어깨가 아프다면",
   redFlags: withFlag({ id: "wing", q: "날개뼈가 갑자기 등에서 툭 튀어나오고, 팔을 앞이나 위로 들기가 힘들어졌나요?", level: 3 }),

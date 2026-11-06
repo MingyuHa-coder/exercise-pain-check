@@ -1,6 +1,6 @@
 /* 스쿼트·런지·레그프레스 무릎 */
 TOPICS.sqk = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "스쿼트·런지·레그프레스 (무릎)", brand: "하체 운동 무릎 점검", eyebrow: "SQUAT · LUNGE · KNEE",
   hero: "스쿼트·런지·레그프레스에서 무릎이 아프다면",
   redFlags: [

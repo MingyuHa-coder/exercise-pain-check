@@ -1,6 +1,6 @@
 /* 데드리프트 허리 */
 TOPICS.dl = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "데드리프트", brand: "데드리프트 허리 점검", eyebrow: "DEADLIFT · LOW BACK",
   hero: "데드리프트할 때 허리가 아프다면",
   redFlags: [

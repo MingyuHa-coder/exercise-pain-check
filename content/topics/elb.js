@@ -1,6 +1,6 @@
 /* 컬·풀업 팔꿈치 */
 TOPICS.elb = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "컬·풀업 (팔꿈치)", brand: "팔꿈치 점검", eyebrow: "CURL · PULL-UP · ELBOW",
   hero: "컬·풀업할 때 팔꿈치가 아프다면",
   redFlags: [

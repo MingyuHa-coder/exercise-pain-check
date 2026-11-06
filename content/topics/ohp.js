@@ -1,6 +1,6 @@
 /* 숄더 프레스 어깨 */
 TOPICS.ohp = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "숄더 프레스", brand: "숄더 프레스 어깨 점검", eyebrow: "OVERHEAD · SHOULDER",
   hero: "숄더 프레스할 때 어깨가 아프다면",
   redFlags: withFlag({ id: "cuff", q: "무게를 들다가 다친 뒤로, 많이 아프지 않은데도 팔을 어깨 높이 위로 들 힘이 없나요?", level: 2 }),

@@ -1,6 +1,6 @@
 /* 딥스·벤치·푸시업 손목 */
 TOPICS.wri = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "딥스·벤치·푸시업 (손목)", brand: "손목 점검", eyebrow: "DIPS · BENCH · WRIST",
   hero: "딥스·벤치·푸시업에서 손목이 아프다면",
   redFlags: [

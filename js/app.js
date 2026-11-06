@@ -256,9 +256,11 @@ function viewFlags() {
   </section>`;
 }
 
+/* 위험 신호 판단: "예"라고 답한 신호 중 가장 급한 단계(숫자가 가장 작은 것)를 보여준다. 검토 지문(safety)에 포함된다. */
+function pickFlagLevel(hits) { return Math.min(...hits.map(f => f.level)); }
 function viewFlagged() {
   const hits = RED_FLAGS.filter(f => S.flags[f.id]);
-  const level = Math.min(...hits.map(f => f.level));
+  const level = pickFlagLevel(hits);
   const L = FLAG_LEVELS[level];
   return `<section class="screen stack-lg">
     <div class="alert">
@@ -429,7 +431,7 @@ function viewResult() {
 
   const refer = r.referFirst ? `<div class="notice" style="background:var(--warn-tint)">
       <h3>이 경우엔 진료를 먼저 권해요</h3>
-      <p>${[r.referHip && "고관절이 걸리거나 잠기는 느낌, 또는 엉덩이 바깥쪽 통증이 있고", r.referInstab && "어깨가 빠질 것 같은 느낌이 있고", r.referWrist && "손목 옆쪽이나 손바닥 쪽이 아프고", r.referElbow && "팔꿈치 앞쪽이 아프고", r.referKnee && "무릎이 붓거나 안·바깥쪽이 아프고", r.referNerve && "통증이나 저림이 무릎 아래로 내려가고", r.referDaily && "운동하지 않을 때도 아프고", r.referLong && "6주 넘게 계속되고", r.referWorse && "점점 나빠지고"].filter(Boolean).join(", ")} 있어요. 아래 조정은 참고만 하고, 정형외과나 재활의학과에서 먼저 확인받으세요.</p>
+      <p>${[r.referHip && "고관절이 걸리거나 잠기는 느낌, 또는 엉덩이 바깥쪽 통증이 있고", r.referInstab && "어깨가 빠질 것 같은 느낌이 있고", r.referWrist && "손목 옆쪽이나 손바닥 쪽이 아프고", r.referElbow && "팔꿈치 앞쪽이 아프고", r.referKnee && "무릎이 붓거나 안·바깥쪽이 아프고", r.referNerve && "통증이나 저림이 무릎 아래로 내려가고", r.referDaily && "운동하지 않을 때도 아프고", r.referLong && "6주 넘게 계속되고", r.referWorse && "점점 나빠지고"].filter(Boolean).join(", ")} 있어요. ${r.adjustments.length ? "아래 조정은 참고만 하고, " : ""}정형외과나 재활의학과에서 먼저 확인받으세요.</p>
     </div>` : "";
 
   const logCount = healthCount();

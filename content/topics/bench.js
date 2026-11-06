@@ -1,6 +1,6 @@
 /* 벤치프레스 어깨 */
 TOPICS.bench = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "벤치프레스", brand: "벤치 어깨 점검", eyebrow: "BENCH · SHOULDER",
   hero: "벤치할 때 어깨가 아프다면",
   redFlags: withFlag({ id: "tear", q: "무거운 무게를 내리다 \"뚝\" 하는 느낌과 함께 아프고 힘이 빠졌나요? 가슴이나 겨드랑이 모양이 그대로여도 해당돼요.", level: 2 }),

@@ -1,6 +1,6 @@
 /* 레터럴 레이즈·업라이트 로우 어깨 */
 TOPICS.lat = {
-  meta: { version: "8.1", updated: "2026-11-06" },
+  meta: { version: "8.2", updated: "2026-11-06" },
   name: "레터럴 레이즈·업라이트 로우", brand: "레터럴 레이즈 어깨 점검", eyebrow: "LATERAL RAISE · SHOULDER",
   hero: "레터럴 레이즈·업라이트 로우에서 어깨가 아프다면",
   redFlags: TOPICS.ohp.redFlags, flagLevels: TOPICS.ohp.flagLevels, flagSrc: TOPICS.ohp.flagSrc,
