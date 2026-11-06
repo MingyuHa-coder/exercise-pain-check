@@ -950,8 +950,8 @@ TOPICS.wri = {
               hypo: "헬스인 손목 통증을 직접 다룬 연구는 찾지 못했어요. 선수 리뷰를 옮겨 온 거예요." },
     side: { name: "손목 옆쪽·손바닥 쪽 통증", plain: "새끼손가락 쪽·엄지 쪽·손바닥 쪽 통증은 연골, 힘줄, 신경 문제일 수 있어요.",
             say: "운동 조정보다 진료를 먼저 받아 보세요.",
-            ev: "weak", evText: "엄지 쪽은 힘줄염, 새끼손가락 쪽 저림은 척골신경 문제를 의심해요.", src: "Shehab 2013",
-            hypo: "이번에 운동 관련 근거를 찾지 못해서 진료를 먼저 권하는 건 앱의 보수적인 선택이에요." },
+            ev: "weak", evText: "엄지 쪽은 힘줄염, 새끼손가락 쪽 저림은 척골신경 문제를 의심해요. 새끼손가락 쪽 연골(TFCC)·힘줄 문제는 진찰로 불안정성을 확인해야 하고, 불안정하지 않으면 보조기·테이핑·활동 조정이 1차 치료예요(선수 대상 리뷰).", src: "Shehab 2013, Pang & Yao 2017",
+            hypo: "불안정성은 스스로 확인할 수 없어서 진료를 먼저 권하는 건 앱의 보수적인 선택이에요." },
   },
   adjustments: {
     neutral: { title: "손목을 덜 꺾기", how: "벤치에서는 바를 손바닥 아래쪽(손목 바로 위)에 두고, 푸시업은 푸시업 손잡이나 주먹을 쥐고 해 보세요. 딥스는 손목이 뒤로 꺾이지 않게 바를 잡으세요.",
@@ -961,7 +961,8 @@ TOPICS.wri = {
   },
   sources: [
     ["Shehab 2013, 손목 통증 평가 (AFP)", "https://www.aafp.org/pubs/afp/issues/2013/0415/p568.html"],
-    ["Hanson & Lourie 2022, 선수의 손등 가운데 통증 리뷰", "https://rcastoragev2.blob.core.windows.net/12fd6379e0f04b0b64c1f95366fcbd3c/PMC9036339.pdf"]],
+    ["Hanson & Lourie 2022, 선수의 손등 가운데 통증 리뷰", "https://rcastoragev2.blob.core.windows.net/12fd6379e0f04b0b64c1f95366fcbd3c/PMC9036339.pdf"],
+    ["Pang & Yao 2017, 선수의 새끼손가락 쪽 손목 통증 리뷰", "https://doi.org/10.1007/s12178-017-9384-9"]],
   sample: { where: "dorsal", ex: "push", ext: "yes", spike: "no", now: "same", dur: "w2to6", trend: "same" },
   summary(a) { return [
     `아픈 곳: ${label("where", a.where)} / 운동: ${label("ex", a.ex)}`,
@@ -978,7 +979,7 @@ TOPICS.wri = {
   },
   extras() {
     return [card("손목 보호대(랩)를 차면 나을까요?", "weak",
-      "이번에 본문을 확인한 자료에는 헬스할 때 차는 손목 랩이 통증에 주는 효과에 대한 근거가 없었어요. 선수 리뷰에서는 인대를 다친 뒤 보호 보조기를 차고 복귀하는 경우가 언급돼요.", "Hanson & Lourie 2022")];
+      "헬스할 때 차는 손목 랩이 통증을 줄이는지 직접 본 연구는 없었어요. 다만 새끼손가락 쪽 연골(TFCC) 손상에서는 보조기·테이핑이 1차 치료에 포함되고, 한 연구에서는 4주 고정으로 57%가 좋아졌어요. 인대를 다친 선수가 보호 보조기를 차고 복귀하는 경우도 언급돼요.", "Pang & Yao 2017, Hanson & Lourie 2022")];
   },
 };
 
@@ -1025,8 +1026,8 @@ TOPICS.run = {
   },
   adjustments: {
     volume: { title: "달리는 양 줄이고 천천히 늘리기", how: "아프지 않은 수준까지 거리와 횟수를 줄이세요. 다시 늘릴 때는 한 번에 지난 한 달 중 가장 긴 거리를 넘지 않게 하세요.",
-              fact: "약 5,200명 추적 연구에서, 한 번에 지난 30일 중 가장 긴 거리보다 10% 넘게 달린 날은 부상 위험이 1.5~2.3배였어요(초록 확인). 주 단위 증가율은 관련이 없었어요.",
-              hypo: "\"아프지 않은 수준\"과 늘리는 속도는 앱이 정한 안내예요. 이미 아픈 사람에게서 시험된 방법은 아니에요.", ev: "mid", src: "Frandsen 2025 (초록), Patel 2011" },
+              fact: "약 5,200명 추적 연구에서, 한 번에 지난 30일 중 가장 긴 거리보다 10% 넘게 달린 날은 부상 위험이 1.5~2.3배였어요. 주 단위 증가율은 관련이 없었어요.",
+              hypo: "이 연구는 아프지 않은 러너가 대상인 관찰 연구라, 10% 아래로 지키면 부상이 줄어드는지는 아직 시험되지 않았어요(저자들도 무작위 연구가 필요하다고 해요). \"아프지 않은 수준\"은 앱이 정한 안내예요.", ev: "mid", src: "Frandsen 2025, Patel 2011" },
     cadence: { title: "보폭 줄이고 발걸음 수 5~10% 늘리기", how: "같은 속도에서 보폭을 조금 줄여 1분당 발걸음 수를 5~10% 늘려 보세요. 메트로놈 앱을 쓰면 쉬워요.",
                fact: "건강한 러너 30명이 발걸음 수를 10% 늘리자 무릎뼈 관절에 걸리는 최대 힘이 14% 줄었어요(실험실 모델 추정).",
                hypo: "아픈 사람에게서 통증이 줄어드는지는 확인되지 않았어요.", ev: "weak", src: "Lenhart 2014" },
@@ -1042,7 +1043,7 @@ TOPICS.run = {
     ["Mellinger & Neurohr 2019, 러너 무릎 부상 치료 리뷰", "https://atm.amegroups.org/article/view/26028/26142"],
     ["Saad 2025, 정강이 부목 범위 고찰 (Cureus)", "https://assets.cureus.com/uploads/review_article/pdf/345672/20250401-813832-3n6cmj.pdf"],
     ["Lenhart 2014, 발걸음 수와 무릎뼈 관절 힘", "https://uwnmbl.engr.wisc.edu/pubs/msse14_lenhart.pdf"],
-    ["Frandsen 2025, 한 번에 달리는 거리 급증과 부상 (BJSM, 초록)", "https://pure.au.dk/portal/en/publications/how-much-running-is-too-much-identifying-high-risk-running-sessio/"]],
+    ["Frandsen 2025, 한 번에 달리는 거리 급증과 부상 (BJSM)", "https://doi.org/10.1136/bjsports-2024-109380"]],
   sample: { where: "front", sit: "yes", spike: "yes", rest: "no", now: "same", dur: "w2to6", trend: "same" },
   summary(a) { return [
     `아픈 곳: ${label("where", a.where)}`,
@@ -1061,7 +1062,7 @@ TOPICS.run = {
   },
   extras() {
     return [card("10% 규칙은 맞나요?", "weak",
-      "\"주당 거리를 10%씩만 늘려라\"는 흔한 조언이에요. 리뷰에서는 학회 권고로 소개되지만, 5,200명 추적 연구 초록에서는 주 단위 증가율보다 한 번에 달린 거리가 지난 한 달 최장 거리를 넘는 것이 부상과 관련 있었어요.", "Mellinger & Neurohr 2019, Frandsen 2025 (초록)")];
+      "\"주당 거리를 10%씩만 늘려라\"는 흔한 조언이에요. 리뷰에서는 학회 권고로 소개되지만, 5,200명 추적 연구에서는 주 단위 증가율보다 한 번에 달린 거리가 지난 한 달 최장 거리를 넘는 것이 부상과 관련 있었어요.", "Mellinger & Neurohr 2019, Frandsen 2025")];
   },
 };
 
