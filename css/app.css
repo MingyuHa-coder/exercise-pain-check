@@ -214,3 +214,13 @@ details.review[open] summary { margin-bottom: 10px; }
 .notice.consent { background: var(--warn-tint); margin-top: 6px; }
 .notice.consent h3 { font-size: 15px; }
 .notice.consent p { font-size: 14px; }
+
+/* v8.1: 의료기관 / 운동 지도 전문가 분리 */
+.card.who { border-left-width: 4px; }
+.card.who.med { border-left-color: var(--danger); }
+.card.who.ex { border-left-color: var(--good); }
+.sits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sits li { padding: 10px 12px; border-radius: 10px; background: var(--chalk); font-size: 15px; display: flex; flex-direction: column; gap: 2px; }
+.sits li.hit { background: var(--plate-tint); box-shadow: inset 3px 0 0 var(--plate); }
+.sits li small { color: var(--plate); font-size: 12px; font-weight: 600; }
+.logmsg.err { color: var(--danger); font-weight: 600; }

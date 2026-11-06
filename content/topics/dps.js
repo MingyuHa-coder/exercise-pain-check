@@ -1,6 +1,6 @@
 /* 딥스·푸시업 어깨 */
 TOPICS.dps = {
-  meta: { version: "8", updated: "2026-11-06" },
+  meta: { version: "8.1", updated: "2026-11-06" },
   name: "딥스·푸시업 (어깨)", brand: "딥스·푸시업 어깨 점검", eyebrow: "DIPS · PUSH-UP · SHOULDER",
   hero: "딥스나 푸시업에서 어깨가 아프다면",
   redFlags: withFlag({ id: "tear", q: "딥스나 푸시업 중 \"뚝\" 하는 느낌과 함께 가슴·겨드랑이 앞이 아프고 힘이 빠졌나요? 멍이 들거나 겨드랑이 앞 모양이 달라졌다면 꼭 해당돼요.", level: 2 }),
