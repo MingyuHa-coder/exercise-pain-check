@@ -1,6 +1,6 @@
 # 운동 통증 점검 (exercise-pain-check)
 
-헬스하다 어깨·허리·무릎이 아플 때, 5분 동안 질문에 답하면 **위험 신호 → 통증 패턴 → 바로 해볼 조정 → 전문가 연결**까지 안내하는 자가점검 웹앱입니다.
+헬스하다 어깨·허리·무릎이 아플 때, 5분 동안 질문에 답하면 **위험 신호 → 점검할 운동 변수 → 다음 운동에서 해볼 조정 → 전문가 연결**까지 안내하는 운동 상황 점검 웹앱입니다. 결과는 질환명이 아니라 무게·그립·깊이 같은 운동 변수로 보여줍니다.
 
 > ⚠️ **진단이나 치료가 아닙니다.** 일부 항목만 전문가 검토를 마친 시제품입니다. 통증이 계속되거나 심하면 정형외과나 재활의학과 진료를 받으세요.
 
@@ -29,7 +29,7 @@
 | 앱 제안 | 연구를 바탕으로 앱이 권하는 실용적인 방법 |
 | 검증 안 된 가설 | 앱이 세운 것으로, 아직 연구로 확인되지 않은 부분 |
 
-본문을 직접 읽은 논문만 근거로 씁니다. 자세한 원칙은 [docs/evidence-principles.md](docs/evidence-principles.md)에 있습니다.
+본문을 직접 읽은 논문만 근거로 씁니다. "논문 확인" 아래에는 연구 종류와 대상(건강인인지, 통증 있는 사람인지)을 함께 붙입니다. 자세한 원칙은 [docs/evidence-principles.md](docs/evidence-principles.md)에 있습니다.
 
 ## 실행 방법
 
@@ -37,26 +37,26 @@
 
 ## 파일 구성
 
+화면·판단 규칙·콘텐츠를 나눠 두었습니다. 문구나 근거를 고칠 때는 `content/` 폴더만 보면 됩니다.
+
 | 파일 | 내용 |
 |---|---|
-| `index.html` | 앱 전체 (화면, 질문, 판단 규칙) |
+| `index.html` | 화면 틀. 아래 파일들을 순서대로 불러옴 |
+| `css/app.css` | 화면 디자인 |
+| `js/app.js` | 엔진: 화면 그리기, 진행 상태, 공통 판단 함수, 결과 기록 |
+| `content/common.js` | 여러 주제가 함께 쓰는 위험 신호·질문·조정·출처 |
+| `content/topics/*.js` | 주제별 콘텐츠: 버전, 위험 신호, 질문, 점검할 운동 변수, 조정, 판단 규칙(analyse), 근거 논문 |
+| `content/body-map.js` | 운동 부위 → 운동 → 아픈 곳 → 주제 연결 |
+| `content/glossary.js` | "쉬운 말 ↔ 의학 용어" 바꾸기 표 |
+| `content/reviews.js` | 전문가 검토 기록 (검토자·분야·의견·수정 내용·날짜·버전) |
+| `content/studies.js` | 연구별 종류·대상 (근거 수준 표시용) |
 | `img/` | 벤치프레스 그립 너비 사진 (AI 생성 이미지) |
-| `docs/bench-press-plan.md` | 벤치프레스 기획서와 근거 논문 목록 |
-| `docs/shoulder-press-plan.md` | 숄더 프레스 기획서와 근거 논문 목록 |
-| `docs/deadlift-plan.md` | 데드리프트 기획서와 근거 논문 목록 |
-| `docs/squat-knee-plan.md` | 스쿼트·런지·레그프레스 무릎 기획서와 근거 논문 목록 |
-| `docs/squat-back-plan.md` | 스쿼트 허리 기획서와 근거 논문 목록 |
+| `docs/*-plan.md` | 주제별 기획서와 근거 논문 목록 |
 | `docs/evidence-principles.md` | 근거 표시 원칙 |
-| `docs/expert-review-pending.md` | 전문가 검토가 필요한 자체 설계 목록 |
-| `docs/expert-review-request-by-role.md` | 의사·물리치료사·스포츠과학 전문가별 검토 요청서 |
-| `docs/lateral-raise-plan.md` | 레터럴 레이즈·업라이트 로우 기획서 |
-| `docs/elbow-plan.md` | 컬·풀업 팔꿈치 기획서 |
-| `docs/wrist-plan.md` | 딥스·벤치·푸시업 손목 기획서 |
-| `docs/running-plan.md` | 달리기 무릎·정강이 기획서 |
-| `docs/dips-pushup-shoulder-plan.md` | 딥스·푸시업 어깨 기획서 |
-| `docs/pullup-shoulder-plan.md` | 풀업·랫풀다운 어깨 기획서 |
-| `docs/hip-plan.md` | 스쿼트·런지 고관절 기획서 |
-| `docs/row-back-plan.md` | 바벨 로우 허리 기획서 |
+| `docs/expert-review-pending.md` | 전문가 검토가 필요한 자체 설계 목록과 검토 기록 |
+| `docs/expert-review-request-by-role.md` | 의사·물리치료사·스포츠과학 전문가·트레이너별 검토 요청서 |
+
+주제 파일 이름: `bench` 벤치 어깨, `ohp` 숄더 프레스 어깨, `dl` 데드리프트 허리, `sqk` 하체 무릎, `sqb` 스쿼트 허리, `lat` 레터럴 레이즈 어깨, `elb` 팔꿈치, `wri` 손목, `run` 달리기, `dps` 딥스·푸시업 어깨, `pul` 풀업·랫풀다운 어깨, `hip` 고관절, `row` 바벨 로우 허리.
 
 ## 앞으로
 
